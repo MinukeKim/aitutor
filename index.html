@@ -8,31 +8,33 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; background-color: #ffffff; color: #334155; }
+        /* 캔버스 사이즈 최적화 */
         .canvas-responsive { width: 100%; max-width: 320px; height: auto; aspect-ratio: 2 / 3; }
+        
+        /* 모바일 전용 반응형 레이아웃 (Responsive Web) */
         @media (max-width: 768px) {
-            .canvas-responsive { max-width: 180px; }
-            body { padding: 1rem !important; }
-            .bubble-container { padding: 1.25rem !important; border-radius: 1.25rem !important; }
-            .max-w-7xl { gap: 0.75rem !important; }
-            .grid { gap: 0.75rem !important; }
+            .canvas-responsive { max-width: 160px; }
+            body { padding: 0.75rem !important; }
+            .bubble-container { padding: 1.25rem !important; border-radius: 1rem !important; min-height: 100px !important; }
+            .quick-menu-scroll { max-height: 120px !important; }
         }
+        
+        /* 스크롤바 커스텀 */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* 퀵 메뉴 스크롤바 커스텀 */
         .quick-menu-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
         .quick-menu-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-start p-6 md:p-12 select-none bg-slate-50 relative">
+<body class="min-h-screen flex flex-col justify-start p-6 md:p-12 select-none bg-white relative">
 
     <!-- 1. 시작 오버레이 -->
     <div id="start-overlay" class="fixed inset-0 bg-[#0f172a] z-[60] flex flex-col items-center justify-center text-white cursor-pointer transition-opacity duration-300" onclick="initAppOnInteraction()">
-        <h2 class="text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc]">AX LAB A.I Tutor</h2>
-        <p class="text-slate-400 text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
+        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc] text-center">AX LAB A.I Tutor</h2>
+        <p class="text-slate-400 text-xs md:text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
     </div>
 
-    <!-- 2. 무응답 1분 대기 모달 -->
+    <!-- 2. 무응답 대기 모달 -->
     <div id="inactivity-modal" class="hidden fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center mx-4">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">Are you there?</h3>
@@ -47,18 +49,19 @@
     <!-- 3. API 키 설정 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4">
-            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Configuration</h3>
+            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API 설정</h3>
             <p class="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
-                안전한 A.I 튜터 사용을 위해 본인의 Gemini API 키와 사용할 모델을 선택해주세요. 입력된 정보는 브라우저에만 보관됩니다.
+                안전한 A.I 튜터 사용을 위해 본인의 Gemini API 키와 사용할 모델을 선택해주세요. (브라우저에만 보관됩니다)
             </p>
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🔑 Gemini API Key</label>
             <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🧠 AI Model Selection</label>
+            <!-- 디폴트 모델: 3.1-flash-lite로 변경 -->
             <select id="api-model-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all cursor-pointer">
-                <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash (튜터 권장)</option>
-                <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite (초경량)</option>
+                <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite (초경량 디폴트)</option>
+                <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash</option>
                 <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (고급 추론)</option>
             </select>
 
@@ -66,104 +69,91 @@
             
             <div class="flex gap-3">
                 <button id="btn-save-key" onclick="verifyAndSaveApiKey()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                    <span id="btn-save-key-text">Verify & Save</span>
+                    <span id="btn-save-key-text">저장</span>
                 </button>
-                <button onclick="cancelApiKeyModal()" class="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all">Cancel</button>
+                <button onclick="cancelApiKeyModal()" class="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all">취소</button>
             </div>
         </div>
     </div>
 
     <!-- 메인 컨테이너 -->
-    <div class="w-full max-w-7xl mx-auto flex flex-col flex-1 gap-6 md:gap-8">
+    <div class="w-full max-w-6xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
         
-        <!-- 상단 헤더 및 통합 컨트롤 패널 -->
-        <div class="flex flex-col md:flex-row items-center justify-between border-b border-slate-200 pb-4 gap-4">
-            <h1 class="text-[21px] md:text-3xl font-extrabold text-slate-800 flex items-baseline tracking-tight">AX LAB A.I Tutor</h1>
+        <!-- 상단 헤더 및 컴팩트 컨트롤 패널 (모바일 최적화) -->
+        <div class="flex flex-row items-center justify-between border-b border-slate-100 pb-3">
+            <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB A.I Tutor</h1>
             
-            <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
-                <!-- 언어 & 캐릭터 선택 -->
-                <div class="flex items-center space-x-2 px-2 border-r border-slate-100">
-                    <span class="text-xs font-bold text-slate-500">🌐 Lang:</span>
-                    <div class="flex space-x-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                        <button id="lang-ko" onclick="setLanguage('ko-KR')" class="w-[65px] py-1.5 text-[10px] font-bold text-slate-500 rounded-md transition-all flex items-center justify-center gap-1">🦊 KOR</button>
-                        <button id="lang-en" onclick="setLanguage('en-US')" class="w-[65px] py-1.5 text-[10px] font-black bg-blue-500 text-white rounded-md shadow-sm transition-all flex items-center justify-center gap-1">🐻‍❄️ ENG</button>
-                    </div>
+            <!-- 우측 상단 핵심 컨트롤 3종 세트 -->
+            <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
+                
+                <!-- 1. START / STOP 버튼 -->
+                <button id="top-action-btn" onclick="toggleActiveMode()" class="px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+                    <span id="top-btn-icon">▶</span>
+                    <span id="top-btn-text">START</span>
+                </button>
+
+                <!-- 2. 언어 선택 (텍스트 및 아이콘 제거) -->
+                <div class="flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                    <button id="lang-ko" onclick="setLanguage('ko-KR')" class="w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all">KOR</button>
+                    <button id="lang-en" onclick="setLanguage('en-US')" class="w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all">ENG</button>
                 </div>
 
-                <!-- 볼륨 제어 -->
-                <div class="flex items-center space-x-2 px-2 border-r border-slate-100">
-                    <span class="text-sm opacity-70">🔈</span>
-                    <input type="range" id="master-vol" min="0" max="1" step="0.1" value="1" class="w-16 md:w-20 accent-slate-700" oninput="updateVolume(this.value)">
-                </div>
-
-                <!-- API 설정 -->
-                <div class="px-2">
-                    <button onclick="openApiKeyModal()" class="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all">
-                        ⚙️ API Config
-                    </button>
-                </div>
+                <!-- 3. API 설정 버튼 -->
+                <button onclick="openApiKeyModal()" class="flex items-center justify-center p-2 md:px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-sm rounded-lg transition-all shadow-sm">
+                    ⚙️ <span class="hidden md:inline ml-1 text-xs font-bold">API</span>
+                </button>
             </div>
         </div>
 
-        <!-- 2단 레이아웃 (상단으로 끌어올림) -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-10 flex-1 items-start mt-2">
+        <!-- 2단 레이아웃 (모바일에서는 세로, PC에서는 가로) -->
+        <div class="flex flex-col md:flex-row gap-4 md:gap-8 flex-1 items-start mt-2">
             
-            <!-- 좌측: 캐릭터 렌더링 및 시작 버튼 -->
-            <div class="md:col-span-5 flex flex-col items-center justify-start space-y-6">
+            <!-- 렌더링 영역 (모바일: 상단 작게 / PC: 좌측) -->
+            <div class="w-full md:w-5/12 lg:w-4/12 flex justify-center">
                 <div class="relative flex items-center justify-center w-full">
                     <canvas id="tutorCanvas" width="400" height="600" class="bg-transparent canvas-responsive transition-all duration-300"></canvas>
                 </div>
-                
-                <div class="w-full max-w-[320px]">
-                    <button id="main-action-btn" onclick="toggleActiveMode()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xl font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                        <span id="btn-icon">▶</span>
-                        <span id="btn-text">START TUTOR</span>
-                    </button>
-                </div>
             </div>
 
-            <!-- 우측: 상/하 고정 말풍선 영역 및 스크롤 메뉴 -->
-            <div class="md:col-span-7 flex flex-col justify-start gap-4">
+            <!-- 대화 및 메뉴 영역 -->
+            <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-start gap-4">
                 
-                <!-- A.I Tutor 말풍선 (상단) -->
-                <div id="tutor-bubble-container" class="bubble-container py-5 px-8 md:p-8 rounded-[2.5rem] bg-[#f4faff] border-2 border-slate-200 flex flex-col w-full min-h-[140px] shadow-sm relative transition-colors duration-500">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span id="tutor-icon" class="text-sm">🐻‍❄️</span>
-                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider">A.I Tutor</span>
+                <!-- A.I Tutor 말풍선 -->
+                <div id="tutor-bubble-container" class="bubble-container py-4 px-6 md:py-6 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-100 flex flex-col w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
+                    <div class="flex items-center gap-2 mb-2 opacity-80">
+                        <span class="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider">A.I Tutor</span>
                     </div>
-                    <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-xl leading-relaxed transition-all duration-300">
+                    <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300">
                         Waiting to start...
                     </div>
                 </div>
 
-                <!-- 사용자 말풍선 (중간) -->
-                <div id="user-bubble-container" class="bubble-container py-5 px-8 md:p-8 rounded-[2.5rem] bg-[#f8fafc] border-2 border-slate-200 flex flex-col w-full min-h-[140px] shadow-sm relative transition-colors duration-500">
-                    <div class="mb-3 flex justify-between items-center">
-                        <div class="flex items-center gap-2 text-[11px] font-black text-indigo-500 uppercase tracking-wider">
-                            <span id="status-icon" class="grayscale opacity-50">🔴</span>
-                            <span id="status-text" class="text-slate-400">Ready</span>
+                <!-- 사용자 말풍선 -->
+                <div class="w-full">
+                    <div id="user-bubble-container" class="bubble-container py-4 px-6 md:py-6 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
+                        <div class="mb-2 flex justify-between items-center opacity-80">
+                            <div class="flex items-center gap-2 text-[10px] md:text-xs font-black text-indigo-500 uppercase tracking-wider">
+                                <span id="status-icon" class="grayscale opacity-50">🔴</span>
+                                <span id="status-text" class="text-slate-400">Ready</span>
+                            </div>
+                        </div>
+                        <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed">
+                            Click START to speak...
                         </div>
                     </div>
-                    <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed">
-                        Click START to speak...
-                    </div>
-                </div>
-                
-                <!-- 퀵 메뉴(버튼) 컨테이너 (스크롤 적용) -->
-                <div class="flex flex-wrap gap-2 mt-2 px-1 pb-4 max-h-[180px] overflow-y-auto quick-menu-scroll content-start">
-                    <!-- English Menus -->
-                    <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-4 py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
-                    <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-4 py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
-                    <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-4 py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">What are the key expressions?</button>
-                    <button onclick="sendQuickQuery('What is the story about?', 'en-US')" class="px-4 py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">What's the story?</button>
-                    <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-4 py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">What's the date today?</button>
                     
-                    <!-- Korean Menus -->
-                    <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-4 py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">제노를 소개해요!</button>
-                    <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-4 py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 잉글리시란?</button>
-                    <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-4 py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">실험방법을 알려줘</button>
-                    <button onclick="sendQuickQuery('AI 툴은 어떻게 사용하나요?', 'ko-KR')" class="px-4 py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">AI 툴 어떻게 써?</button>
-                    <button onclick="sendQuickQuery('오늘 학습 주제를 요약해 줘.', 'ko-KR')" class="px-4 py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-sm rounded-full transition-all shadow-sm shrink-0">학습 주제 요약해줘</button>
+                    <!-- 퀵 메뉴 (가로 스크롤 허용) -->
+                    <div class="flex flex-wrap gap-2 mt-3 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
+                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
+                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
+                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
+                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
+                        
+                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
+                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
+                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
+                        <button onclick="sendQuickQuery('오늘 학습 주제를 요약해 줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">학습 주제 요약</button>
+                    </div>
                 </div>
 
             </div>
@@ -172,14 +162,13 @@
 
     <script>
         // ==========================================
-        // 1. 전역 상태 및 공통 변수
+        // 1. 전역 상태 및 변수
         // ==========================================
         let isActive = false;   
-        let currentChar = 'xena'; // Default Bear
+        let currentChar = 'xena'; 
         let isTutorSpeaking = false;
         let hasInitialized = false;
-        let masterVolume = 1.0;
-        let sttLang = 'en-US'; // Default English
+        let sttLang = 'en-US'; 
         
         let inactivityTimeout = null;
         let lastVoiceTime = Date.now();
@@ -197,70 +186,66 @@
         const tutorText = document.getElementById('tutor-text');
         const userText = document.getElementById('user-text');
         
-        const mainBtn = document.getElementById('main-action-btn');
+        const topActionBtn = document.getElementById('top-action-btn');
+        const topBtnIcon = document.getElementById('top-btn-icon');
+        const topBtnText = document.getElementById('top-btn-text');
+        
         const statusText = document.getElementById('status-text');
         const statusIcon = document.getElementById('status-icon');
-        const tutorIcon = document.getElementById('tutor-icon');
         const modalEl = document.getElementById('inactivity-modal');
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. AI Tutor 시스템 프롬프트 (과목 바인딩 삭제 & 통합 지식)
+        // 2. AI 시스템 프롬프트
         // ==========================================
         const SYSTEM_INSTRUCTION = `
 You are the 'AX LAB Tutor'. 
 Today's Date: August 17, 2026.
 
-[KNOWLEDGE BASE: BOTH PERSONAS KNOW ALL OF THIS PERFECTLY]
-- Target Audience: 3rd Grade (9-10 years old).
+[KNOWLEDGE BASE: BOTH PERSONAS KNOW ALL OF THIS]
+- Target: 3rd Grade (9-10 years old).
 - Program: AX LAB English (XENOIS), K-CLIL (Science + English).
-- Current Lesson: Unit 1 - Egyptian Pyramids.
-- Core Science: Force, push, pull, friction, gravity.
-- Core Tools: Ramp (slide), Lever (stick), Balance scale.
-- Key Expressions: "They use ~", "push ~ away", "pull ~ close".
-- The Story: Ancient Egyptians building the giant Pyramids.
-- The Experiment: Exploring how to move heavy stone blocks using ramps and wooden logs (rolling to reduce friction).
-- AI Tool: Listens, speaks, and helps kids learn science and English.
+- Unit 1: Egyptian Pyramids.
+- Science: Force, push, pull, friction, gravity.
+- Tools: Ramp (slide), Lever (stick), Balance scale.
+- Story: Ancient Egyptians building Pyramids.
+- Experiment: Moving heavy stones using ramps and rolling logs (reducing friction).
 
-[STRICT LANGUAGE & PERSONA BINDING - NO SUBJECT RESTRICTIONS]
-- The choice of Persona depends SOLELY on the user's language, NOT the subject. Both personas can teach science AND English.
-- If the user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
-- If the user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
+[STRICT LANGUAGE BINDING]
+- If user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
+- If user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
 
 Persona 1: [XENO] (Fox)
 - Language: Korean only.
-- Tone: 친절하고 명확한 초등학교 3학년 수준의 튜터.
+- Tone: 친절하고 명확한 초등학교 3학년 수준.
 - Output Tag: [XENO]
 
 Persona 2: [XENA] (Polar Bear)
 - Language: English only.
-- Tone: EFL beginner level. VERY simple, basic English words (Pre-A1). Short sentences.
+- Tone: EFL beginner. VERY simple, basic words (Pre-A1). Short sentences.
 - Output Tag: [XENA]
 
 CRITICAL LENGTH RULE:
-- Keep responses under 30 words total (2-3 short sentences). Very conversational!
+- Max 30 words total (2-3 short sentences). Conversational!
         `;
 
         // ==========================================
-        // 3. 메인 컨트롤 및 끼어들기(Interrupt) 로직
+        // 3. 메인 컨트롤 및 Interrupt
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
             hasInitialized = true;
             document.getElementById('start-overlay').style.display = 'none';
-            
             try { const unlock = new SpeechSynthesisUtterance(''); unlock.volume = 0; window.speechSynthesis.speak(unlock); } catch (e) {}
-
-            setLanguage('en-US'); // Default: English & Bear
-
+            
+            setLanguage('en-US');
             playWelcomeMessage();
             welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
         }
 
         function playWelcomeMessage() {
             if (isActive) return; 
-            const msg = "Welcome! I'm AX LAB A.I Tutor. Please, click the Start button.";
-            speakText(msg);
+            speakText("Welcome! I'm AX LAB A.I Tutor. Please, click the Start button.");
         }
 
         function toggleActiveMode() {
@@ -274,9 +259,10 @@ CRITICAL LENGTH RULE:
             clearInterval(welcomeIntervalId);
             stopSpeaking(); 
             
-            mainBtn.className = "w-full py-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xl font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2";
-            document.getElementById('btn-icon').innerText = "■";
-            document.getElementById('btn-text').innerText = "STOP TUTOR";
+            // 상단 시작 버튼 상태 변경 (빨간색 STOP)
+            topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
+            topBtnIcon.innerText = "■";
+            topBtnText.innerText = "STOP";
 
             setStatusUI('listen');
             startSttLogic();
@@ -290,24 +276,20 @@ CRITICAL LENGTH RULE:
             stopSpeaking();
 
             if (!fromModal) {
-                mainBtn.className = "w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xl font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2";
-                document.getElementById('btn-icon').innerText = "▶";
-                document.getElementById('btn-text').innerText = "START TUTOR";
+                // 상단 시작 버튼 원래대로
+                topActionBtn.className = "px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
+                topBtnIcon.innerText = "▶";
+                topBtnText.innerText = "START";
                 setStatusUI('ready');
             }
         }
 
-        // ✋ 학생 끼어들기(Interrupt) 기능
+        // 학생 끼어들기 기능
         window.interruptTutor = function() {
             if (isTutorSpeaking) {
-                stopSpeaking(); // TTS 강제 종료 및 큐 초기화
-                
-                // 마이크 즉시 재개
-                if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
-                    try { 
-                        recognition.lang = sttLang;
-                        recognition.start(); 
-                    } catch(e){}
+                stopSpeaking();
+                if (isActive && recognition && !sttErrorOccurred) {
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
                     setStatusUI('listen');
                 }
             }
@@ -318,117 +300,91 @@ CRITICAL LENGTH RULE:
         // ==========================================
         function setLanguage(langCode, fromAI = false) {
             sttLang = langCode;
-            document.getElementById('lang-ko').className = "w-[65px] py-1.5 text-[10px] font-bold text-slate-500 rounded-md transition-all flex items-center justify-center gap-1";
-            document.getElementById('lang-en').className = "w-[65px] py-1.5 text-[10px] font-bold text-slate-500 rounded-md transition-all flex items-center justify-center gap-1";
+            document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
+            document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
             
             if (langCode === 'ko-KR') {
-                document.getElementById('lang-ko').className = "w-[65px] py-1.5 text-[10px] font-black bg-orange-500 text-white rounded-md shadow-sm transition-all flex items-center justify-center gap-1";
+                document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-orange-500 text-white rounded-md shadow-sm transition-all";
                 if (!fromAI) setCharacter('xeno');
             } else {
-                document.getElementById('lang-en').className = "w-[65px] py-1.5 text-[10px] font-black bg-blue-500 text-white rounded-md shadow-sm transition-all flex items-center justify-center gap-1";
+                document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all";
                 if (!fromAI) setCharacter('xena');
             }
-            
-            if (recognition && isActive && !fromAI) {
-                recognition.stop(); 
-            }
+            if (recognition && isActive && !fromAI) { recognition.stop(); }
         }
 
         function sendQuickQuery(text, langCode) {
             if (!hasInitialized) initAppOnInteraction();
-            
-            if (!isActive) startActiveMode();
-            else stopSttLogic(); 
-            
+            if (!isActive) startActiveMode(); else stopSttLogic(); 
             setLanguage(langCode);
             userText.innerHTML = text;
-            userText.className = "text-slate-800 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed";
-            
+            userText.className = "text-slate-800 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
             callGeminiAI(text);
         }
 
         // ==========================================
-        // 5. UI 상태 변화 (끼어들기 버튼 노출 포함)
+        // 5. UI 상태 변화
         // ==========================================
         function setStatusUI(state) {
-            tutorBubbleContainer.classList.remove('border-slate-200', 'border-orange-400', 'border-blue-400');
-            userBubbleContainer.classList.remove('border-slate-200', 'border-rose-400', 'bg-[#fffdf0]', 'bg-[#f8fafc]');
+            tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-300', 'border-blue-300');
+            userBubbleContainer.classList.remove('border-slate-100', 'border-rose-300', 'bg-white', 'bg-slate-50', 'bg-rose-50');
 
             if (state === 'ready') {
-                statusText.innerText = "Ready";
-                statusText.className = "text-slate-400";
-                statusIcon.innerText = "🔴";
-                statusIcon.className = "grayscale opacity-50";
+                statusText.innerText = "Ready"; statusText.className = "text-slate-400";
+                statusIcon.innerText = "🔴"; statusIcon.className = "grayscale opacity-50";
                 userText.innerHTML = "Click START to speak...";
-                userText.className = "text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed";
-                
-                userBubbleContainer.classList.add('bg-[#f8fafc]', 'border-slate-200');
-                tutorBubbleContainer.classList.add('border-slate-200');
+                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
+                userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
+                tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'listen') {
-                statusText.innerText = "Listening";
-                statusText.className = "text-indigo-500";
-                statusIcon.innerText = "🔴";
-                statusIcon.className = "animate-pulse";
+                statusText.innerText = "Listening"; statusText.className = "text-indigo-500";
+                statusIcon.innerText = "🔴"; statusIcon.className = "animate-pulse";
                 userText.innerHTML = "Speak now...";
-                userText.className = "text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed";
-                
-                userBubbleContainer.classList.add('bg-[#fffdf0]', 'border-rose-400');
-                tutorBubbleContainer.classList.add('border-slate-200');
+                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
+                // 말할 때 사용자 말풍선 연한 분홍 배경과 테두리
+                userBubbleContainer.classList.add('bg-rose-50', 'border-rose-300');
+                tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'process') {
-                statusText.innerText = "Processing...";
-                statusText.className = "text-slate-500";
-                statusIcon.innerText = "⏳";
-                statusIcon.className = "";
-                userText.className = "text-slate-600 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed";
-                
-                userBubbleContainer.classList.add('bg-[#f8fafc]', 'border-slate-200');
-                tutorBubbleContainer.classList.add('border-slate-200');
+                statusText.innerText = "Processing..."; statusText.className = "text-slate-500";
+                statusIcon.innerText = "⏳"; statusIcon.className = "";
+                userText.className = "text-slate-600 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
+                userBubbleContainer.classList.add('bg-white', 'border-slate-100');
+                tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'speak') {
-                statusText.innerText = "Tutor Answering";
-                statusText.className = "text-indigo-500";
-                statusIcon.innerText = "🔊";
-                statusIcon.className = "";
+                statusText.innerText = "Tutor Answering"; statusText.className = "text-indigo-500";
+                statusIcon.innerText = "🔊"; statusIcon.className = "";
                 
-                // 끼어들기 버튼 UI 삽입
                 userText.innerHTML = `
                     <div class="flex flex-col items-start justify-center space-y-2 mt-1">
-                        <span class="text-slate-400 text-sm font-medium">Listening paused...</span>
-                        <button onclick="interruptTutor()" class="px-6 py-2.5 bg-rose-50 border border-rose-200 text-rose-500 font-bold text-sm rounded-full shadow-sm hover:bg-rose-100 transition-all active:scale-95 flex items-center gap-2">
-                            ✋ 말 끊고 질문하기
+                        <span class="text-slate-400 text-xs font-medium">Listening paused...</span>
+                        <button onclick="interruptTutor()" class="px-5 py-2 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
+                            ✋ 말 끊고 말하기
                         </button>
                     </div>
                 `;
                 userText.className = "w-full transition-all duration-300";
-                
-                userBubbleContainer.classList.add('bg-[#f8fafc]', 'border-slate-200');
-                tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
+                userBubbleContainer.classList.add('bg-white', 'border-slate-100');
+                tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-300' : 'border-blue-300');
             }
         }
 
         function setCharacter(char) {
             currentChar = char;
             tutorBubbleContainer.classList.remove('bg-[#fffcf5]', 'bg-[#f4faff]');
-            if (char === 'xeno') {
-                tutorIcon.innerText = "🦊";
-                tutorBubbleContainer.classList.add('bg-[#fffcf5]');
-            } else {
-                tutorIcon.innerText = "🐻‍❄️";
-                tutorBubbleContainer.classList.add('bg-[#f4faff]');
-            }
+            if (char === 'xeno') { tutorBubbleContainer.classList.add('bg-[#fffcf5]'); } 
+            else { tutorBubbleContainer.classList.add('bg-[#f4faff]'); }
             if(isTutorSpeaking) setStatusUI('speak'); 
         }
-
-        function updateVolume(val) { masterVolume = parseFloat(val); }
 
         // ==========================================
         // API Modal Functions
         // ==========================================
-        function openApiKeyModal() { document.getElementById('apikey-modal').classList.remove('hidden'); document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; const savedModel = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash'; const modelSelect = document.getElementById('api-model-select'); if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) { modelSelect.value = savedModel; } else { modelSelect.value = 'gemini-2.5-flash'; } document.getElementById('api-key-error').classList.add('hidden'); }
+        function openApiKeyModal() { document.getElementById('apikey-modal').classList.remove('hidden'); document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; const savedModel = localStorage.getItem('gemini_model_name') || 'gemini-3.1-flash-lite'; const modelSelect = document.getElementById('api-model-select'); if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) { modelSelect.value = savedModel; } else { modelSelect.value = 'gemini-3.1-flash-lite'; } document.getElementById('api-key-error').classList.add('hidden'); }
         function cancelApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
-        async function verifyAndSaveApiKey() { const inputEl = document.getElementById('api-key-input'); const modelSelectEl = document.getElementById('api-model-select'); const errorEl = document.getElementById('api-key-error'); const key = inputEl.value.trim(); const modelName = modelSelectEl.value; if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } document.getElementById('btn-save-key-text').innerText = "Verifying..."; errorEl.classList.add('hidden'); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); if (response.ok) { localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); document.getElementById('apikey-modal').classList.add('hidden'); } else { throw new Error("API 연동 실패"); } } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } finally { document.getElementById('btn-save-key-text').innerText = "Verify & Save"; } }
+        async function verifyAndSaveApiKey() { const inputEl = document.getElementById('api-key-input'); const modelSelectEl = document.getElementById('api-model-select'); const errorEl = document.getElementById('api-key-error'); const key = inputEl.value.trim(); const modelName = modelSelectEl.value; if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } document.getElementById('btn-save-key-text').innerText = "Verifying..."; errorEl.classList.add('hidden'); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); if (response.ok) { localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); document.getElementById('apikey-modal').classList.add('hidden'); } else { throw new Error("API 연동 실패"); } } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } finally { document.getElementById('btn-save-key-text').innerText = "저장"; } }
 
         // ==========================================
-        // STT Logic (한/영 지능형 의문문 완성 알고리즘)
+        // STT Logic (Echo Lock 및 의문문 완성)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -440,61 +396,43 @@ CRITICAL LENGTH RULE:
             recognition.interimResults = true; 
             recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
             recognition.onresult = (event) => {
-                if(!isActive) return;
+                // 방어코드: AI가 말하는 중에는 소리가 스피커에서 나와도 마이크가 완전히 무시함
+                if(!isActive || isTutorSpeaking) return; 
+                
                 lastVoiceTime = Date.now();
                 let interimTranscript = ''; let finalTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; else interimTranscript += event.results[i][0].transcript; }
-                if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed"; userText.innerHTML = interimTranscript; }
+                if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed"; userText.innerHTML = interimTranscript; }
                 
                 if (finalTranscript && finalTranscript.trim().length > 1) {
                     let processed = finalTranscript.trim();
-                    
                     if (!processed.endsWith('?')) {
                         const stripped = processed.replace(/[.\s]+$/, '');
-                        
                         if (sttLang === 'ko-KR') {
                             const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
                             const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
                             const casualEndings = /(어|해|야|지)$/;
-                            
-                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) {
-                                processed = stripped + '?';
-                            }
+                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) { processed = stripped + '?'; }
                         } else if (sttLang === 'en-US') {
-                            // 영어 의문문 시작 어휘 검출 (대소문자 무관)
                             const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
-                            if (startsWithQuestionWord) {
-                                processed = stripped + '?';
-                            }
+                            if (startsWithQuestionWord) { processed = stripped + '?'; }
                         }
                     }
-
-                    userText.className = "text-slate-800 font-medium text-[15px] md:text-xl leading-relaxed transition-all duration-300";
+                    userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300";
                     userText.innerHTML = processed;
                     recognition.stop();
                     callGeminiAI(processed);
                 }
             };
             recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
-            
             recognition.onend = () => { 
                 if (isActive && !isTutorSpeaking && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
-                    try { 
-                        recognition.lang = sttLang;
-                        recognition.start(); 
-                    } catch(e) {} 
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e) {} 
                     setStatusUI('listen'); 
                 } 
             };
         }
-        
-        function startSttLogic() { 
-            sttErrorOccurred = false; 
-            if (recognition) { 
-                recognition.lang = sttLang; 
-                try { recognition.start(); } catch(e) {} 
-            } 
-        }
+        function startSttLogic() { sttErrorOccurred = false; if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
         function stopSttLogic() { if (recognition) try { recognition.stop(); } catch(e) {} isProcessingAI = false; }
 
         // ==========================================
@@ -504,7 +442,7 @@ CRITICAL LENGTH RULE:
             isProcessingAI = true;
             setStatusUI('process');
             const apiKey = localStorage.getItem('gemini_api_key');
-            const modelName = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash';
+            const modelName = localStorage.getItem('gemini_model_name') || 'gemini-3.1-flash-lite';
             
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             while (chatHistory.length > 7) { chatHistory.shift(); chatHistory.shift(); }
@@ -518,15 +456,8 @@ CRITICAL LENGTH RULE:
                 const data = await response.json();
                 let aiResponse = data.candidates[0].content.parts[0].text.trim();
                 
-                if (aiResponse.startsWith('[XENO]')) {
-                    setLanguage('ko-KR', true);
-                    setCharacter('xeno');
-                    aiResponse = aiResponse.replace('[XENO]', '').trim();
-                } else if (aiResponse.startsWith('[XENA]')) {
-                    setLanguage('en-US', true);
-                    setCharacter('xena');
-                    aiResponse = aiResponse.replace('[XENA]', '').trim();
-                }
+                if (aiResponse.startsWith('[XENO]')) { setLanguage('ko-KR', true); setCharacter('xeno'); aiResponse = aiResponse.replace('[XENO]', '').trim(); } 
+                else if (aiResponse.startsWith('[XENA]')) { setLanguage('en-US', true); setCharacter('xena'); aiResponse = aiResponse.replace('[XENA]', '').trim(); }
 
                 chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
                 setStatusUI('speak');
@@ -540,7 +471,7 @@ CRITICAL LENGTH RULE:
         }
 
         // ==========================================
-        // TTS Engine (A.I 발음 강제 치환 적용)
+        // TTS Engine (Sync 최적화 및 Mic Delay)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -551,11 +482,12 @@ CRITICAL LENGTH RULE:
 
         function speakText(text) {
             stopSpeaking();
-            if (masterVolume === 0 || !text) return;
+            if (!text) return;
             isTutorSpeaking = true;
             renderer.startSpeakingAnim('tts');
 
-            const rawChunks = text.match(/[^.?!]+[.?!]+[\s]*|[^.?!]+$/g) || [text];
+            // 구두점을 덩어리에 포함시켜 더 안전하게 분할
+            const rawChunks = text.match(/[^.?!]+[.?!]*[\s]*/g) || [text];
             ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
             currentChunkIndex = 0;
 
@@ -583,17 +515,14 @@ CRITICAL LENGTH RULE:
 
             const currentText = ttsQueue[currentChunkIndex];
             
-            // 엔진 발음용 텍스트 변환 (시각적 텍스트는 원본 유지)
+            // 엔진 발음 강제 치환
             let spokenText = currentText;
-            if (sttLang === 'ko-KR') {
-                spokenText = spokenText.replace(/A\.I/gi, '에이 아이');
-            } else {
-                spokenText = spokenText.replace(/A\.I/gi, 'A I');
-            }
+            if (sttLang === 'ko-KR') { spokenText = spokenText.replace(/A\.I/gi, '에이 아이'); } 
+            else { spokenText = spokenText.replace(/A\.I/gi, 'A I'); }
             
             const utterance = new SpeechSynthesisUtterance(spokenText);
             window.activeUtterance = utterance;
-            utterance.volume = masterVolume;
+            utterance.volume = 1.0;
             utterance.lang = sttLang; 
 
             if (voices.length === 0) voices = speechSynthesis.getVoices();
@@ -602,8 +531,9 @@ CRITICAL LENGTH RULE:
             if (bestVoice) utterance.voice = bestVoice;
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
+            // 싱크 밀림 방지를 위해 타임아웃 여유 시간 대폭 증가
             clearTimeout(window.ttsFallbackTimeout);
-            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 150) + 2000);
+            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 200) + 3000);
 
             utterance.onstart = () => { renderer.startSpeakingAnim('tts'); };
             utterance.onend = () => { currentChunkIndex++; playNextTtsChunk(); };
@@ -620,13 +550,13 @@ CRITICAL LENGTH RULE:
                 if (span) span.className = "text-slate-800 transition-colors duration-300 mr-1";
             });
 
-            if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
-                try { 
-                    recognition.lang = sttLang;
-                    recognition.start(); 
-                } catch(e){}
-                setStatusUI('listen');
-            }
+            // 스피커 소리가 마이크로 들어가는 현상(에코) 방지를 위해 0.5초 지연 후 마이크 켬
+            setTimeout(() => {
+                if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
+                    setStatusUI('listen');
+                }
+            }, 500);
         }
 
         function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
@@ -635,24 +565,13 @@ CRITICAL LENGTH RULE:
         // 렌더링 엔진 
         // ==========================================
         const renderer = {
-            config: {
-                "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" },
-                "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" }
-            },
+            config: { "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } },
             simulation: { mouthOpen: 0, blinkState: 0, blinkTimer: 0, isSpeaking: false, speakType: 'none', vowel: 'A', speakIntervalId: null },
             ctx: null, images: { xena: new Image(), xeno: new Image() }, imageLoaded: { xena: false, xeno: false },
             init: function() { this.ctx = canvasEl.getContext('2d'); this.images.xena.src = "Xena_base.png"; this.images.xeno.src = "Xeno_base.png"; this.images.xena.onload = () => { this.imageLoaded.xena = true; }; this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; this.startLoop(); },
             startSpeakingAnim: function(type) { clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; this.simulation.speakType = type; if (type === 'tts') { const vowels = ['A', 'E', 'I', 'O', 'U']; let vIdx = 0; this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; this.simulation.vowel = vowels[vIdx]; vIdx = (vIdx + 1) % vowels.length; }, 130); } },
             stopSpeakingAnim: function() { this.simulation.isSpeaking = false; this.simulation.speakType = 'none'; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; },
-            startLoop: function() {
-                const drawFrame = () => {
-                    this.ctx.clearRect(0, 0, 400, 600); const breathe = Math.sin(Date.now() / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe);
-                    if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); }
-                    this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore();
-                    if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > 200) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 212) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } }
-                    requestAnimationFrame(drawFrame);
-                }; drawFrame();
-            },
+            startLoop: function() { const drawFrame = () => { this.ctx.clearRect(0, 0, 400, 600); const breathe = Math.sin(Date.now() / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe); if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); } this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore(); if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > 200) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 212) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } } requestAnimationFrame(drawFrame); }; drawFrame(); },
             drawBackupSilhouette: function() { this.ctx.save(); this.ctx.beginPath(); const isXena = currentChar === 'xena'; this.ctx.arc(0, 140, 100, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f0f7ff" : "#fffbf2"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(0, 10, 105, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f8fafc" : "#fffbeb"; this.ctx.fill(); this.ctx.strokeStyle = "#cbd5e1"; this.ctx.lineWidth = 4; this.ctx.stroke(); this.ctx.fillStyle = "#64748b"; this.ctx.font = "bold 13px sans-serif"; this.ctx.textAlign = "center"; this.ctx.fillText(`[${currentChar}_base.png] Loading...`, 0, 10); this.ctx.restore(); },
             drawVectorEyes: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const eyeYOff = cfg.eyeY - 200; const drawSingleEye = (ex, isLeft) => { this.ctx.save(); if (this.simulation.blinkState === 1) { this.ctx.beginPath(); this.ctx.arc(ex, eyeYOff + cfg.eyeHeight * 0.25, cfg.eyeWidth * 0.9, 0.1 * Math.PI, 0.9 * Math.PI, false); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness * 3.5; this.ctx.stroke(); } else { this.ctx.beginPath(); this.ctx.ellipse(ex, eyeYOff, cfg.eyeWidth, cfg.eyeHeight, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness || 1.5; this.ctx.stroke(); this.ctx.beginPath(); const pw = Math.min(cfg.eyeWidth * 0.85, cfg.pupilSize / 2); const px = ex + (isLeft ? (cfg.pupilLeftOffsetX||0) : (cfg.pupilRightOffsetX||0)); const py = eyeYOff + (isLeft ? (cfg.pupilLeftOffsetY||0) : (cfg.pupilRightOffsetY||0)); this.ctx.ellipse(px, py, pw, pw, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#1e293b"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(px - pw*0.35, py - pw*0.35, pw*0.35, 0, Math.PI*2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); } this.ctx.restore(); }; drawSingleEye(-halfSpacing, true); drawSingleEye(halfSpacing, false); },
             drawVectorEyebrows: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const browY = (cfg.eyeY - 200) + cfg.eyebrowY; const drawBrow = (bx, isLeft) => { this.ctx.save(); this.ctx.translate(bx, browY); this.ctx.rotate((cfg.eyebrowAngle * Math.PI / 180) * (isLeft ? 1 : -1)); this.ctx.beginPath(); const half = cfg.eyebrowLength / 2; this.ctx.moveTo(-half, isLeft ? -1.5 : 1.5); this.ctx.quadraticCurveTo(0, -cfg.eyebrowThickness * 1.5, half, isLeft ? 1.5 : -1.5); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyebrowThickness; this.ctx.lineCap = "round"; this.ctx.stroke(); this.ctx.restore(); }; drawBrow(-halfSpacing, true); drawBrow(halfSpacing, false); },
