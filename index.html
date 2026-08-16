@@ -16,7 +16,6 @@
             .max-w-7xl { gap: 0.75rem !important; }
             .grid { gap: 0.75rem !important; }
         }
-        /* Custom Scrollbar for API Key Modal */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -41,15 +40,27 @@
         </div>
     </div>
 
-    <!-- 3. API 키 입력 모달 (BYOK) -->
+    <!-- 3. API 키 및 모델명 선택 모달 (Dropdown 적용) -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4">
-            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Key Required</h3>
+            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Configuration</h3>
             <p class="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
-                안전한 AI 튜터 사용을 위해 본인의 Gemini API 키를 입력해주세요. 키는 서버에 전송되지 않고 현재 브라우저에만 안전하게 보관됩니다.
+                안전한 AI 튜터 사용을 위해 본인의 Gemini API 키와 사용할 모델을 선택해주세요. 입력된 정보는 브라우저에만 보관됩니다.
             </p>
+            
+            <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🔑 Gemini API Key</label>
             <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-            <div id="api-key-error" class="hidden text-rose-500 text-xs font-bold mb-4"></div>
+            
+            <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🧠 AI Model Selection</label>
+            <select id="api-model-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all cursor-pointer">
+                <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash (튜터 권장)</option>
+                <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite (초경량)</option>
+                <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (고급 추론)</option>
+                <option value="gemini-1.5-flash-latest">⚠️ Gemini 1.5 Flash (구버전 호환)</option>
+            </select>
+
+            <div id="api-key-error" class="hidden text-rose-500 text-xs font-bold mb-4 bg-rose-50 p-3 rounded-lg border border-rose-100"></div>
+            
             <div class="flex gap-3">
                 <button id="btn-save-key" onclick="verifyAndSaveApiKey()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
                     <span id="btn-save-key-text">Verify & Save</span>
@@ -149,10 +160,10 @@
                         <input type="range" id="mimic-pitch-slider" min="1.0" max="2.0" step="0.1" value="1.3" class="w-16 md:w-20 accent-indigo-600" oninput="updatePitchModifier(this.value)">
                     </div>
 
-                    <!-- Tutor 전용 API Key 설정 버튼 -->
+                    <!-- Tutor 전용 API Config 설정 버튼 -->
                     <div id="panel-apikey-controls" class="hidden items-center px-2 py-1 transition-all border-l border-slate-200">
                         <button onclick="openApiKeyModal()" class="flex items-center gap-1 bg-slate-200 hover:bg-slate-300 text-slate-600 text-[10px] font-bold py-1.5 px-3 rounded-md transition-all shadow-sm">
-                            🔑 API Key
+                            ⚙️ API Config
                         </button>
                     </div>
 
@@ -270,7 +281,7 @@ Formatting & TTS Rules:
         function toggleActiveMode() {
             if (!hasInitialized) return;
             
-            if (currentTab === 'tutor' && !localStorage.getItem('gemini_api_key')) {
+            if (currentTab === 'tutor' && (!localStorage.getItem('gemini_api_key') || !localStorage.getItem('gemini_model_name'))) {
                 openApiKeyModal();
                 return;
             }
@@ -342,11 +353,22 @@ Formatting & TTS Rules:
         }
 
         // ==========================================
-        // 4. API Key (BYOK) 검증 로직
+        // 4. API Key & Model (Dropdown) 검증 로직
         // ==========================================
         function openApiKeyModal() {
             document.getElementById('apikey-modal').classList.remove('hidden');
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
+            
+            // 저장된 모델 세팅 (없으면 디폴트 2.5-flash)
+            const savedModel = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash';
+            const modelSelect = document.getElementById('api-model-select');
+            
+            if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) {
+                modelSelect.value = savedModel;
+            } else {
+                modelSelect.value = 'gemini-2.5-flash';
+            }
+            
             document.getElementById('api-key-error').classList.add('hidden');
         }
 
@@ -356,9 +378,12 @@ Formatting & TTS Rules:
 
         async function verifyAndSaveApiKey() {
             const inputEl = document.getElementById('api-key-input');
+            const modelSelectEl = document.getElementById('api-model-select');
             const btnTextEl = document.getElementById('btn-save-key-text');
             const errorEl = document.getElementById('api-key-error');
+            
             const key = inputEl.value.trim();
+            const modelName = modelSelectEl.value; // 드롭다운에서 선택된 값 가져오기
 
             if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; }
 
@@ -366,8 +391,8 @@ Formatting & TTS Rules:
             errorEl.classList.add('hidden');
 
             try {
-                // 모델 이름 latest 로 수정 반영
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
+                // 선택된 모델명으로 검증 URL 호출
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
                 const response = await fetch(url, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
@@ -375,9 +400,10 @@ Formatting & TTS Rules:
 
                 if (response.ok) {
                     localStorage.setItem('gemini_api_key', key);
+                    localStorage.setItem('gemini_model_name', modelName); // 모델명 저장
                     document.getElementById('apikey-modal').classList.add('hidden');
                     if (currentTab === 'tutor' && !isActive) {
-                        tutorBubble.innerText = "API Key saved. Ready to chat!";
+                        tutorBubble.innerText = `Connected to ${modelName}. Ready to chat!`;
                     }
                 } else {
                     const errorData = await response.json();
@@ -478,19 +504,20 @@ Formatting & TTS Rules:
             setStatusUI('process');
             
             const apiKey = localStorage.getItem('gemini_api_key');
+            // 저장된 모델명 불러오기 (기본값 2.5-flash)
+            const modelName = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash';
+            
             if (!apiKey) {
-                alert("API 키가 설정되지 않았습니다.");
+                alert("API 설정이 완료되지 않았습니다.");
                 stopActiveMode();
                 openApiKeyModal();
                 return;
             }
 
-            // 모델 이름 latest 로 수정 반영
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             
-            // [버그 수정] 대화 쌍(user/model) 단위로 제거하여 배열 첫 요소가 항상 user가 되도록 강제
             while (chatHistory.length > 7) { 
                 chatHistory.shift(); 
                 chatHistory.shift(); 
@@ -532,7 +559,7 @@ Formatting & TTS Rules:
 
             } catch (error) {
                 console.error(error);
-                userText.innerText = "서버 통신 오류가 발생했습니다. API 키나 네트워크를 확인해주세요.";
+                userText.innerText = "서버 통신 오류가 발생했습니다. API 정보나 네트워크를 확인해주세요.";
                 setTimeout(() => {
                     isProcessingAI = false;
                     if(isActive) setStatusUI('listen');
