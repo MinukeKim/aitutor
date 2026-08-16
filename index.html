@@ -11,7 +11,7 @@
         /* 캔버스 사이즈 최적화 */
         .canvas-responsive { width: 100%; max-width: 320px; height: auto; aspect-ratio: 2 / 3; }
         
-        /* 모바일 전용 반응형 레이아웃 (Responsive Web) */
+        /* 모바일 전용 반응형 레이아웃 */
         @media (max-width: 768px) {
             .canvas-responsive { max-width: 160px; }
             body { padding: 0.75rem !important; }
@@ -58,7 +58,6 @@
             <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🧠 AI Model Selection</label>
-            <!-- 디폴트 모델: 3.1-flash-lite로 변경 -->
             <select id="api-model-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all cursor-pointer">
                 <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite (초경량 디폴트)</option>
                 <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash</option>
@@ -79,36 +78,32 @@
     <!-- 메인 컨테이너 -->
     <div class="w-full max-w-6xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
         
-        <!-- 상단 헤더 및 컴팩트 컨트롤 패널 (모바일 최적화) -->
+        <!-- 상단 헤더 및 컴팩트 컨트롤 패널 -->
         <div class="flex flex-row items-center justify-between border-b border-slate-100 pb-3">
             <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB A.I Tutor</h1>
             
-            <!-- 우측 상단 핵심 컨트롤 3종 세트 -->
             <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
                 
-                <!-- 1. START / STOP 버튼 -->
                 <button id="top-action-btn" onclick="toggleActiveMode()" class="px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5">
                     <span id="top-btn-icon">▶</span>
                     <span id="top-btn-text">START</span>
                 </button>
 
-                <!-- 2. 언어 선택 (텍스트 및 아이콘 제거) -->
                 <div class="flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
                     <button id="lang-ko" onclick="setLanguage('ko-KR')" class="w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all">KOR</button>
                     <button id="lang-en" onclick="setLanguage('en-US')" class="w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all">ENG</button>
                 </div>
 
-                <!-- 3. API 설정 버튼 -->
                 <button onclick="openApiKeyModal()" class="flex items-center justify-center p-2 md:px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-sm rounded-lg transition-all shadow-sm">
                     ⚙️ <span class="hidden md:inline ml-1 text-xs font-bold">API</span>
                 </button>
             </div>
         </div>
 
-        <!-- 2단 레이아웃 (모바일에서는 세로, PC에서는 가로) -->
-        <div class="flex flex-col md:flex-row gap-4 md:gap-8 flex-1 items-start mt-2">
+        <!-- 2단 레이아웃 (세로 중앙 정렬 items-center 적용) -->
+        <div class="flex flex-col md:flex-row gap-4 md:gap-8 flex-1 items-center justify-center mt-2">
             
-            <!-- 렌더링 영역 (모바일: 상단 작게 / PC: 좌측) -->
+            <!-- 렌더링 영역 -->
             <div class="w-full md:w-5/12 lg:w-4/12 flex justify-center">
                 <div class="relative flex items-center justify-center w-full">
                     <canvas id="tutorCanvas" width="400" height="600" class="bg-transparent canvas-responsive transition-all duration-300"></canvas>
@@ -116,34 +111,25 @@
             </div>
 
             <!-- 대화 및 메뉴 영역 -->
-            <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-start gap-4">
+            <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-center gap-5">
                 
-                <!-- A.I Tutor 말풍선 -->
-                <div id="tutor-bubble-container" class="bubble-container py-4 px-6 md:py-6 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-100 flex flex-col w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
-                    <div class="flex items-center gap-2 mb-2 opacity-80">
-                        <span class="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-wider">A.I Tutor</span>
-                    </div>
+                <!-- 튜터 말풍선 -->
+                <div id="tutor-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-200 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
                     <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300">
                         Waiting to start...
                     </div>
                 </div>
 
-                <!-- 사용자 말풍선 -->
+                <!-- 사용자 말풍선 영역 -->
                 <div class="w-full">
-                    <div id="user-bubble-container" class="bubble-container py-4 px-6 md:py-6 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
-                        <div class="mb-2 flex justify-between items-center opacity-80">
-                            <div class="flex items-center gap-2 text-[10px] md:text-xs font-black text-indigo-500 uppercase tracking-wider">
-                                <span id="status-icon" class="grayscale opacity-50">🔴</span>
-                                <span id="status-text" class="text-slate-400">Ready</span>
-                            </div>
-                        </div>
+                    <div id="user-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-200 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
                         <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed">
                             Click START to speak...
                         </div>
                     </div>
                     
                     <!-- 퀵 메뉴 (가로 스크롤 허용) -->
-                    <div class="flex flex-wrap gap-2 mt-3 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
+                    <div class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
                         <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
                         <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
                         <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
@@ -190,8 +176,6 @@
         const topBtnIcon = document.getElementById('top-btn-icon');
         const topBtnText = document.getElementById('top-btn-text');
         
-        const statusText = document.getElementById('status-text');
-        const statusIcon = document.getElementById('status-icon');
         const modalEl = document.getElementById('inactivity-modal');
         const canvasEl = document.getElementById('tutorCanvas');
 
@@ -245,7 +229,7 @@ CRITICAL LENGTH RULE:
 
         function playWelcomeMessage() {
             if (isActive) return; 
-            speakText("Welcome! I'm AX LAB A.I Tutor. Please, click the Start button.");
+            speakText("Welcome! I'm AX LAB Tutor. Please, click the Start button.");
         }
 
         function toggleActiveMode() {
@@ -259,7 +243,6 @@ CRITICAL LENGTH RULE:
             clearInterval(welcomeIntervalId);
             stopSpeaking(); 
             
-            // 상단 시작 버튼 상태 변경 (빨간색 STOP)
             topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
             topBtnIcon.innerText = "■";
             topBtnText.innerText = "STOP";
@@ -276,7 +259,6 @@ CRITICAL LENGTH RULE:
             stopSpeaking();
 
             if (!fromModal) {
-                // 상단 시작 버튼 원래대로
                 topActionBtn.className = "px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
                 topBtnIcon.innerText = "▶";
                 topBtnText.innerText = "START";
@@ -284,7 +266,6 @@ CRITICAL LENGTH RULE:
             }
         }
 
-        // 학생 끼어들기 기능
         window.interruptTutor = function() {
             if (isTutorSpeaking) {
                 stopSpeaking();
@@ -323,48 +304,38 @@ CRITICAL LENGTH RULE:
         }
 
         // ==========================================
-        // 5. UI 상태 변화
+        // 5. UI 상태 변화 (테두리 하이라이팅 포함)
         // ==========================================
         function setStatusUI(state) {
-            tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-300', 'border-blue-300');
-            userBubbleContainer.classList.remove('border-slate-100', 'border-rose-300', 'bg-white', 'bg-slate-50', 'bg-rose-50');
+            // 모든 외곽선 관련 클래스 초기화
+            tutorBubbleContainer.classList.remove('border-slate-200', 'border-orange-400', 'border-blue-400');
+            userBubbleContainer.classList.remove('border-slate-200', 'border-rose-400', 'bg-white', 'bg-slate-50', 'bg-rose-50');
 
             if (state === 'ready') {
-                statusText.innerText = "Ready"; statusText.className = "text-slate-400";
-                statusIcon.innerText = "🔴"; statusIcon.className = "grayscale opacity-50";
                 userText.innerHTML = "Click START to speak...";
                 userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
-                userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
-                tutorBubbleContainer.classList.add('border-slate-100');
+                userBubbleContainer.classList.add('bg-slate-50', 'border-slate-200');
+                tutorBubbleContainer.classList.add('border-slate-200');
             } else if (state === 'listen') {
-                statusText.innerText = "Listening"; statusText.className = "text-indigo-500";
-                statusIcon.innerText = "🔴"; statusIcon.className = "animate-pulse";
-                userText.innerHTML = "Speak now...";
-                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
-                // 말할 때 사용자 말풍선 연한 분홍 배경과 테두리
-                userBubbleContainer.classList.add('bg-rose-50', 'border-rose-300');
-                tutorBubbleContainer.classList.add('border-slate-100');
+                userText.innerHTML = "Listening...";
+                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed animate-pulse";
+                userBubbleContainer.classList.add('bg-rose-50', 'border-rose-400');
+                tutorBubbleContainer.classList.add('border-slate-200');
             } else if (state === 'process') {
-                statusText.innerText = "Processing..."; statusText.className = "text-slate-500";
-                statusIcon.innerText = "⏳"; statusIcon.className = "";
                 userText.className = "text-slate-600 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
-                userBubbleContainer.classList.add('bg-white', 'border-slate-100');
-                tutorBubbleContainer.classList.add('border-slate-100');
+                userBubbleContainer.classList.add('bg-white', 'border-slate-200');
+                tutorBubbleContainer.classList.add('border-slate-200');
             } else if (state === 'speak') {
-                statusText.innerText = "Tutor Answering"; statusText.className = "text-indigo-500";
-                statusIcon.innerText = "🔊"; statusIcon.className = "";
-                
                 userText.innerHTML = `
-                    <div class="flex flex-col items-start justify-center space-y-2 mt-1">
-                        <span class="text-slate-400 text-xs font-medium">Listening paused...</span>
-                        <button onclick="interruptTutor()" class="px-5 py-2 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-xs rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
+                    <div class="flex flex-col items-start justify-center mt-1">
+                        <button onclick="interruptTutor()" class="px-5 py-2.5 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-sm rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
                             ✋ 말 끊고 말하기
                         </button>
                     </div>
                 `;
                 userText.className = "w-full transition-all duration-300";
-                userBubbleContainer.classList.add('bg-white', 'border-slate-100');
-                tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-300' : 'border-blue-300');
+                userBubbleContainer.classList.add('bg-white', 'border-slate-200');
+                tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
         }
 
@@ -396,7 +367,6 @@ CRITICAL LENGTH RULE:
             recognition.interimResults = true; 
             recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
             recognition.onresult = (event) => {
-                // 방어코드: AI가 말하는 중에는 소리가 스피커에서 나와도 마이크가 완전히 무시함
                 if(!isActive || isTutorSpeaking) return; 
                 
                 lastVoiceTime = Date.now();
@@ -471,7 +441,7 @@ CRITICAL LENGTH RULE:
         }
 
         // ==========================================
-        // TTS Engine (Sync 최적화 및 Mic Delay)
+        // TTS Engine 
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -486,7 +456,6 @@ CRITICAL LENGTH RULE:
             isTutorSpeaking = true;
             renderer.startSpeakingAnim('tts');
 
-            // 구두점을 덩어리에 포함시켜 더 안전하게 분할
             const rawChunks = text.match(/[^.?!]+[.?!]*[\s]*/g) || [text];
             ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
             currentChunkIndex = 0;
@@ -515,14 +484,14 @@ CRITICAL LENGTH RULE:
 
             const currentText = ttsQueue[currentChunkIndex];
             
-            // 엔진 발음 강제 치환
+            // 엔진 발음용 텍스트 변환 
             let spokenText = currentText;
             if (sttLang === 'ko-KR') { spokenText = spokenText.replace(/A\.I/gi, '에이 아이'); } 
             else { spokenText = spokenText.replace(/A\.I/gi, 'A I'); }
             
             const utterance = new SpeechSynthesisUtterance(spokenText);
             window.activeUtterance = utterance;
-            utterance.volume = 1.0;
+            utterance.volume = 1.0; // 볼륨 슬라이더 제거 후 고정
             utterance.lang = sttLang; 
 
             if (voices.length === 0) voices = speechSynthesis.getVoices();
@@ -531,7 +500,6 @@ CRITICAL LENGTH RULE:
             if (bestVoice) utterance.voice = bestVoice;
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
-            // 싱크 밀림 방지를 위해 타임아웃 여유 시간 대폭 증가
             clearTimeout(window.ttsFallbackTimeout);
             window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 200) + 3000);
 
@@ -550,7 +518,6 @@ CRITICAL LENGTH RULE:
                 if (span) span.className = "text-slate-800 transition-colors duration-300 mr-1";
             });
 
-            // 스피커 소리가 마이크로 들어가는 현상(에코) 방지를 위해 0.5초 지연 후 마이크 켬
             setTimeout(() => {
                 if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
                     try { recognition.lang = sttLang; recognition.start(); } catch(e){}
