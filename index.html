@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AX LAB A.I Tutor</title>
+    <title>AX LAB AI Tutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
@@ -31,7 +31,7 @@
 
     <!-- 1. 시작 오버레이 -->
     <div id="start-overlay" class="fixed inset-0 bg-[#0f172a] z-[60] flex flex-col items-center justify-center text-white cursor-pointer transition-opacity duration-300" onclick="initAppOnInteraction()">
-        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc] text-center">AX LAB A.I Tutor</h2>
+        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc] text-center">AX LAB AI Tutor</h2>
         <p class="text-slate-400 text-xs md:text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
     </div>
 
@@ -52,7 +52,7 @@
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">설정 (Settings)</h3>
             <p class="text-xs text-slate-500 font-medium mb-4 leading-relaxed">
-                안전한 A.I 튜터 사용을 위한 환경을 세팅합니다.
+                안전한 AI 튜터 사용을 위한 환경을 세팅합니다.
             </p>
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-2">🔑 Gemini API Key</label>
@@ -65,28 +65,21 @@
                 <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (고급 추론)</option>
             </select>
 
-            <!-- 신규: 튜터 레벨 설정 옵션 -->
+            <!-- 튜터 레벨 설정 옵션 (레벨 3 삭제, 레벨 1 기본값) -->
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎓 튜터 난이도 및 스타일</label>
             <div class="flex flex-col gap-2.5 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
-                    <input type="radio" name="tutor-level" value="1" class="mt-1 accent-indigo-600">
+                    <input type="radio" name="tutor-level" value="1" checked class="mt-1 accent-indigo-600">
                     <div class="flex flex-col">
-                        <span class="font-bold text-indigo-600">Lv 1. 핵심 요약 모드</span>
+                        <span class="font-bold text-indigo-600">Lv 1. 핵심 요약 모드 (기본)</span>
                         <span class="text-xs text-slate-500">단문 3개 이하. 요청 시에만 지식 확장.</span>
                     </div>
                 </label>
                 <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
-                    <input type="radio" name="tutor-level" value="2" checked class="mt-1 accent-indigo-600">
+                    <input type="radio" name="tutor-level" value="2" class="mt-1 accent-indigo-600">
                     <div class="flex flex-col">
-                        <span class="font-bold text-indigo-600">Lv 2. 질문 유도 모드 (기본)</span>
-                        <span class="text-xs text-slate-500">단문 5개 이하. 끝에 대화를 유도하는 질문.</span>
-                    </div>
-                </label>
-                <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
-                    <input type="radio" name="tutor-level" value="3" class="mt-1 accent-indigo-600">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-indigo-600">Lv 3. 적극 탐구 모드</span>
-                        <span class="text-xs text-slate-500">단문 7개 이하. 기본적으로 교안 지식 자동 부연 설명.</span>
+                        <span class="font-bold text-indigo-600">Lv 2. 질문 유도 모드</span>
+                        <span class="text-xs text-slate-500">단문 5개 이하. 끝에 대화를 유도하는 질문 포함.</span>
                     </div>
                 </label>
             </div>
@@ -107,7 +100,7 @@
         
         <!-- 상단 헤더 및 컴팩트 컨트롤 패널 -->
         <div class="flex flex-row items-center justify-between border-b border-slate-100 pb-3">
-            <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB A.I Tutor</h1>
+            <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB AI Tutor</h1>
             
             <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
                 
@@ -207,20 +200,17 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. 동적 시스템 프롬프트 (레벨 기반)
+        // 2. 동적 시스템 프롬프트 (레벨 1, 2)
         // ==========================================
         function getSystemInstruction() {
-            // UI에 선택된 레벨 값 가져오기 (기본값 2)
             const levelEl = document.querySelector('input[name="tutor-level"]:checked');
-            const level = levelEl ? levelEl.value : "2"; 
+            const level = levelEl ? levelEl.value : "1"; // Default Level 1
 
             let levelInstruction = "";
             if (level === "1") {
-                levelInstruction = "- Length Limit: Max 3 short sentences.\n- Extension: Core answer only. DO NOT add extra knowledge unless the user specifically asks for it.";
+                levelInstruction = "- Length Limit: Max 3 short sentences.\n- Extension: Core answer only. DO NOT add extra knowledge unless the user specifically asks for it. Keep it very brief.";
             } else if (level === "2") {
-                levelInstruction = "- Length Limit: Max 5 short sentences.\n- Extension: Give the core answer, and gracefully end with a related question to invite the user to learn more (e.g., 'Shall we talk about friction?', 'What do you think?').";
-            } else if (level === "3") {
-                levelInstruction = "- Length Limit: Max 7 short sentences.\n- Extension: Answer the core question and automatically add about 2 sentences of fascinating, related detail from the curriculum. Keep the tone engaging and fast-paced to avoid boredom.";
+                levelInstruction = "- Length Limit: Max 5 short sentences.\n- Extension: Give the core answer, and gracefully end with a related question to invite the user to learn more.";
             }
 
             return `
@@ -256,7 +246,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 3. 메인 컨트롤 및 초기 안내 멘트 로직
+        // 3. 메인 컨트롤 및 초기 안내 멘트
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -264,26 +254,23 @@ ${levelInstruction}
             document.getElementById('start-overlay').style.display = 'none';
             try { const unlock = new SpeechSynthesisUtterance(''); unlock.volume = 0; window.speechSynthesis.speak(unlock); } catch (e) {}
             
-            // 로컬스토리지 저장값 불러오기
-            const savedLevel = localStorage.getItem('tutor_level');
-            if (savedLevel) {
-                const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
-                if(radio) radio.checked = true;
-            }
+            // 저장된 레벨 불러오기 (기본 1)
+            const savedLevel = localStorage.getItem('tutor_level') || '1';
+            const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
+            if(radio) radio.checked = true;
 
-            setLanguage('en-US'); // Default: English
+            setLanguage('en-US'); 
             playWelcomeMessage();
             welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
         }
 
         function playWelcomeMessage() {
             if (isActive) return; 
-            // 현재 언어에 맞춰 인사말 분기 (발음 문제가 없도록 A.I 단어 등 교정 완료된 텍스트)
             let msg = "";
             if (sttLang === 'ko-KR') {
-                msg = "환영합니다! 저는 AX LAB A.I 튜터예요. 시작 버튼을 눌러주세요.";
+                msg = "환영합니다! 저는 AX LAB AI 튜터예요. 시작 버튼을 눌러주세요.";
             } else {
-                msg = "Welcome! I'm AX LAB A.I Tutor. Please, click the Start button.";
+                msg = "Welcome! I'm AX LAB AI Tutor. Please, click the Start button.";
             }
             speakText(msg);
         }
@@ -349,7 +336,6 @@ ${levelInstruction}
             }
             if (recognition && isActive && !fromAI) { recognition.stop(); }
             
-            // 아직 시작하지 않은 상태에서 언어 버튼을 누르면 그 언어에 맞는 웰컴 메시지 다시 재생
             if (!isActive && hasInitialized) {
                 stopSpeaking();
                 clearInterval(welcomeIntervalId);
@@ -371,8 +357,8 @@ ${levelInstruction}
         // 5. UI 상태 변화 
         // ==========================================
         function setStatusUI(state) {
-            tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-300', 'border-blue-300');
-            userBubbleContainer.classList.remove('border-slate-100', 'border-rose-300', 'bg-white', 'bg-slate-50', 'bg-rose-50');
+            tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-400', 'border-blue-400');
+            userBubbleContainer.classList.remove('border-slate-100', 'border-rose-400', 'bg-white', 'bg-slate-50', 'bg-rose-50');
 
             if (state === 'ready') {
                 userText.innerHTML = "Click START to speak...";
@@ -411,7 +397,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // API Modal & Settings Functions
+        // API Modal & Settings 
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
@@ -421,7 +407,7 @@ ${levelInstruction}
             if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) { modelSelect.value = savedModel; } 
             else { modelSelect.value = 'gemini-3.1-flash-lite'; } 
             
-            const savedLevel = localStorage.getItem('tutor_level') || '2';
+            const savedLevel = localStorage.getItem('tutor_level') || '1';
             const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
             if(radio) radio.checked = true;
 
@@ -452,7 +438,7 @@ ${levelInstruction}
                 if (response.ok) { 
                     localStorage.setItem('gemini_api_key', key); 
                     localStorage.setItem('gemini_model_name', modelName); 
-                    localStorage.setItem('tutor_level', levelVal); // 레벨 저장
+                    localStorage.setItem('tutor_level', levelVal);
                     document.getElementById('apikey-modal').classList.add('hidden'); 
                 } else { 
                     throw new Error("API 연동 실패"); 
@@ -528,7 +514,6 @@ ${levelInstruction}
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             while (chatHistory.length > 7) { chatHistory.shift(); chatHistory.shift(); }
 
-            // 동적 프롬프트 가져오기
             const dynamicSystemInstruction = getSystemInstruction();
 
             try {
@@ -601,9 +586,9 @@ ${levelInstruction}
             // 엔진 발음 교정 로직 (시각적 텍스트는 원본 유지)
             let spokenText = currentText;
             if (sttLang === 'ko-KR') { 
-                spokenText = spokenText.replace(/A\.?I\b/gi, '에이 아이').replace(/AX\b/gi, '에이 엑스');
+                spokenText = spokenText.replace(/AI/gi, '에이아이').replace(/AX/gi, '에이엑스');
             } else { 
-                spokenText = spokenText.replace(/A\.?I\b/gi, 'A I').replace(/AX\b/gi, 'A X');
+                spokenText = spokenText.replace(/\bAI\b/gi, 'A I').replace(/\bAX\b/gi, 'A X');
             }
             
             const utterance = new SpeechSynthesisUtterance(spokenText);
