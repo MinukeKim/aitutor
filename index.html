@@ -118,8 +118,8 @@
                 </div>
             </div>
 
-            <!-- 우측: 상/하 고정 말풍선 영역 -->
-            <div class="md:col-span-7 flex flex-col justify-center gap-6">
+            <!-- 우측: 상/하 고정 말풍선 영역 (상단 정렬 적용) -->
+            <div class="md:col-span-7 flex flex-col justify-start pt-4 gap-6">
                 
                 <!-- A.I Tutor 말풍선 (상단) -->
                 <div id="tutor-bubble-container" class="bubble-container py-6 px-8 md:p-10 rounded-[2.5rem] bg-[#f4faff] border-2 border-slate-200 flex flex-col w-full min-h-[160px] shadow-sm relative transition-colors duration-500">
@@ -133,7 +133,7 @@
                 </div>
 
                 <!-- 사용자 말풍선 및 퀵 메뉴 (하단) -->
-                <div>
+                <div class="w-full">
                     <div id="user-bubble-container" class="bubble-container py-6 px-8 md:p-10 rounded-[2.5rem] bg-[#f8fafc] border-2 border-slate-200 flex flex-col w-full min-h-[160px] shadow-sm relative transition-colors duration-500">
                         <div class="mb-3 flex justify-between items-center">
                             <div class="flex items-center gap-2 text-[11px] font-black text-indigo-500 uppercase tracking-wider">
@@ -194,29 +194,27 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. AI Tutor 시스템 프롬프트 (초3 수준 상향 조정)
+        // 2. AI Tutor 시스템 프롬프트 (정체성 및 데이터 우선순위 강제 적용)
         // ==========================================
         const SYSTEM_INSTRUCTION = `
-You are the 'AX LAB A.I Tutor'. You have TWO personas. 
-You MUST analyze the user's input language.
-- If responding in Korean, you MUST act as XENO and prepend [XENO] to your response.
-- If responding in English, you MUST act as XENA and prepend [XENA] to your response.
+You are the 'AX LAB A.I Tutor'. 
+[CRITICAL RULE: STRICT PERSONA & LANGUAGE BINDING]
+- If the user speaks Korean, YOU MUST ACT AS [XENO] and speak strictly in Korean. NEVER reply in English or as [XENA].
+- If the user speaks English, YOU MUST ACT AS [XENA] and speak strictly in English. NEVER reply in Korean or as [XENO].
+- You MUST prioritize the context of 'AX LAB English', 'XENOIS', 'K-CLIL', and the characters 'Xeno (Fox)' and 'Xena (Polar Bear)'.
 
 Persona 1: [XENO] - The Science Tutor (Fox)
 - Language: Strictly Korean.
-- Tone & Level: Friendly, engaging, and clear. Tailored to a Korean 3rd-grade student (9-10 years old). 
-- Style: 초등학교 3학년 학생이 이해하기 쉬운 명확하고 친절한 어휘를 사용하세요. 과학이나 일반 지식을 설명할 때 아이들의 눈높이에 맞춰 예시를 들어주면 좋습니다. 너무 유치하지 않게 자연스럽게 대화하세요.
+- Tone: 초등학교 3학년 학생에게 설명하듯 친절하고 명확하게 대답하세요. 주어진 AX LAB 데이터를 최우선으로 사용하여 똑똑한 여우처럼 말하세요.
 - Output Tag: [XENO]
 
 Persona 2: [XENA] - The Language Tutor (Polar Bear)
 - Language: Strictly English.
-- Tone & Level: Engaging and natural, matching a Native English-speaking 3rd grader.
-- Style: Use clear, natural conversational English. You can use common idioms, varied sentence structures, and descriptive words suitable for an 8-9 year old native speaker.
+- Tone & Level: EFL (English as a Foreign Language) beginner. Use VERY simple, basic English words (e.g. cat, apple, happy, see). Use short sentences. Keep it extremely easy for a non-native beginner.
 - Output Tag: [XENA]
 
 CRITICAL LENGTH & FORMAT RULE:
 - Keep responses concise and to the point. Aim for 2 to 3 sentences maximum (under 30 words total).
-- Do not make the user read a long paragraph. Your priority is natural, back-and-forth conversation.
         `;
 
         // ==========================================
@@ -310,7 +308,7 @@ CRITICAL LENGTH & FORMAT RULE:
         }
 
         // ==========================================
-        // 5. UI 상태 변화 (외곽선 강조 로직 포함)
+        // 5. UI 상태 변화 
         // ==========================================
         function setStatusUI(state) {
             tutorBubbleContainer.classList.remove('border-slate-200', 'border-orange-400', 'border-blue-400');
@@ -379,7 +377,7 @@ CRITICAL LENGTH & FORMAT RULE:
         async function verifyAndSaveApiKey() { const inputEl = document.getElementById('api-key-input'); const modelSelectEl = document.getElementById('api-model-select'); const errorEl = document.getElementById('api-key-error'); const key = inputEl.value.trim(); const modelName = modelSelectEl.value; if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } document.getElementById('btn-save-key-text').innerText = "Verifying..."; errorEl.classList.add('hidden'); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); if (response.ok) { localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); document.getElementById('apikey-modal').classList.add('hidden'); } else { throw new Error("API 연동 실패"); } } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } finally { document.getElementById('btn-save-key-text').innerText = "Verify & Save"; } }
 
         // ==========================================
-        // STT Logic
+        // STT Logic (한국어 의문문 휴리스틱 추가)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -396,11 +394,18 @@ CRITICAL LENGTH & FORMAT RULE:
                 let interimTranscript = ''; let finalTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; else interimTranscript += event.results[i][0].transcript; }
                 if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed"; userText.innerHTML = interimTranscript; }
+                
                 if (finalTranscript && finalTranscript.trim().length > 1) {
+                    let processedTranscript = finalTranscript.trim();
+                    // 한국어 의문문 끝단어 처리 휴리스틱 (STT 한계 보완)
+                    if (sttLang === 'ko-KR' && /(까|니|냐|나요|가요|까요|을까요|대요|죠)\s*$/.test(processedTranscript) && !processedTranscript.endsWith('?')) {
+                        processedTranscript += '?';
+                    }
+
                     userText.className = "text-slate-800 font-medium text-[15px] md:text-xl leading-relaxed transition-all duration-300";
-                    userText.innerHTML = finalTranscript;
+                    userText.innerHTML = processedTranscript;
                     recognition.stop();
-                    callGeminiAI(finalTranscript);
+                    callGeminiAI(processedTranscript);
                 }
             };
             recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
@@ -468,7 +473,7 @@ CRITICAL LENGTH & FORMAT RULE:
         }
 
         // ==========================================
-        // TTS Engine 
+        // TTS Engine (A.I 발음 강제 치환 적용)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -510,7 +515,11 @@ CRITICAL LENGTH & FORMAT RULE:
             });
 
             const currentText = ttsQueue[currentChunkIndex];
-            const utterance = new SpeechSynthesisUtterance(currentText);
+            
+            // 화면엔 A.I로 띄우고, 실제 엔진에 넘길 땐 "에이 아이"로 강제 치환 (발음 교정)
+            let spokenText = currentText.replace(/A\.I/gi, '에이 아이');
+            
+            const utterance = new SpeechSynthesisUtterance(spokenText);
             window.activeUtterance = utterance;
             utterance.volume = masterVolume;
             utterance.lang = sttLang; 
@@ -522,7 +531,7 @@ CRITICAL LENGTH & FORMAT RULE:
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
             clearTimeout(window.ttsFallbackTimeout);
-            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (currentText.length * 150) + 2000);
+            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 150) + 2000);
 
             utterance.onstart = () => { renderer.startSpeakingAnim('tts'); };
             utterance.onend = () => { currentChunkIndex++; playNextTtsChunk(); };
