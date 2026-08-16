@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <!-- 3. API 키 및 모델명 선택 모달 (Dropdown 적용) -->
+    <!-- 3. API 키 및 모델명 선택 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Configuration</h3>
@@ -136,6 +136,7 @@
                             </div>
                         </div>
 
+                        <!-- 내용이 출력될 텍스트 영역 -->
                         <div id="user-text" class="text-slate-500 font-bold text-[17px] md:text-3xl italic transition-all duration-300 leading-relaxed">
                             Speak now...
                         </div>
@@ -202,7 +203,6 @@
 
         window.activeUtterance = null;
         window.ttsFallbackTimeout = null;
-        let ttsKeepAliveInterval = null;
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const userBubbleContainer = document.getElementById('user-bubble-container');
@@ -218,7 +218,7 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. AI Tutor 시스템 프롬프트
+        // 2. AI Tutor 시스템 프롬프트 (강력한 길이 제한 적용)
         // ==========================================
         const SYSTEM_INSTRUCTION = `
 You are the AI Tutor engine for 'AX LAB English' (XENOIS). You have TWO distinct personas. 
@@ -244,10 +244,10 @@ Content & K-CLIL Context:
 Strict Guardrails (Stern Guardian Mode):
 - If the user uses profanity, sexual, or violent content, drop the playful persona. Respond strictly and rationally, setting a boundary, then gently redirect to science/English.
 
-Formatting & TTS Rules:
-- Keep responses SHORT (2-3 sentences max).
-- Emojis are allowed.
-- MUST start exactly with [XENO] or [XENA].
+CRITICAL LENGTH LIMIT (STRICT RULE):
+- You MUST NOT exceed 2 sentences. 
+- You MUST keep your total response under 15 words.
+- Be direct, extremely brief, and strictly follow this limit. Do not add unnecessary conversational filler. If you exceed this length, you fail.
         `;
 
         // ==========================================
@@ -337,8 +337,9 @@ Formatting & TTS Rules:
                 statusText.innerText = "Listening";
                 statusIcon.innerText = "🔴";
                 statusIcon.classList.add('animate-pulse');
+                // 기존 텍스트(노래방 자막 등) 덮어쓰기
+                userText.innerHTML = "Speak now...";
                 userText.className = "text-slate-400 font-bold text-[17px] md:text-3xl italic transition-all duration-300 leading-relaxed";
-                userText.innerText = "Speak now...";
             } else if (state === 'process') {
                 statusText.innerText = "Processing...";
                 statusIcon.innerText = "⏳";
@@ -348,7 +349,8 @@ Formatting & TTS Rules:
                 statusText.innerText = currentTab === 'wrm' ? "Mimicking!" : "Tutor Answering";
                 statusIcon.innerText = "🔊";
                 statusIcon.classList.remove('animate-pulse');
-                userText.className = "text-indigo-600 font-extrabold text-[17px] md:text-3xl leading-relaxed transition-all duration-300";
+                // 부모 컨테이너의 클래스 (자식 span 태그들이 색상을 오버라이드하게 됨)
+                userText.className = "text-[17px] md:text-3xl leading-relaxed transition-all duration-300";
             }
         }
 
@@ -359,7 +361,6 @@ Formatting & TTS Rules:
             document.getElementById('apikey-modal').classList.remove('hidden');
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
             
-            // 저장된 모델 세팅 (없으면 디폴트 2.5-flash)
             const savedModel = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash';
             const modelSelect = document.getElementById('api-model-select');
             
@@ -383,7 +384,7 @@ Formatting & TTS Rules:
             const errorEl = document.getElementById('api-key-error');
             
             const key = inputEl.value.trim();
-            const modelName = modelSelectEl.value; // 드롭다운에서 선택된 값 가져오기
+            const modelName = modelSelectEl.value; 
 
             if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; }
 
@@ -391,7 +392,6 @@ Formatting & TTS Rules:
             errorEl.classList.add('hidden');
 
             try {
-                // 선택된 모델명으로 검증 URL 호출
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
                 const response = await fetch(url, {
                     method: "POST", headers: { "Content-Type": "application/json" },
@@ -400,7 +400,7 @@ Formatting & TTS Rules:
 
                 if (response.ok) {
                     localStorage.setItem('gemini_api_key', key);
-                    localStorage.setItem('gemini_model_name', modelName); // 모델명 저장
+                    localStorage.setItem('gemini_model_name', modelName); 
                     document.getElementById('apikey-modal').classList.add('hidden');
                     if (currentTab === 'tutor' && !isActive) {
                         tutorBubble.innerText = `Connected to ${modelName}. Ready to chat!`;
@@ -419,7 +419,7 @@ Formatting & TTS Rules:
         }
 
         // ==========================================
-        // 5. STT & AI Tutor 통합 엔진
+        // 5. STT 통합 엔진
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -446,12 +446,12 @@ Formatting & TTS Rules:
 
                 if (interimTranscript) {
                     userText.className = "text-slate-400 font-bold text-[17px] md:text-3xl transition-all duration-300 leading-relaxed";
-                    userText.innerText = interimTranscript;
+                    userText.innerHTML = interimTranscript;
                 }
                 
                 if (finalTranscript && finalTranscript.trim().length > 1) {
                     userText.className = "text-slate-800 font-extrabold text-[17px] md:text-3xl leading-relaxed transition-all duration-300";
-                    userText.innerText = finalTranscript;
+                    userText.innerHTML = finalTranscript;
                     
                     if (currentTab === 'stt') {
                         recognition.stop();
@@ -504,7 +504,6 @@ Formatting & TTS Rules:
             setStatusUI('process');
             
             const apiKey = localStorage.getItem('gemini_api_key');
-            // 저장된 모델명 불러오기 (기본값 2.5-flash)
             const modelName = localStorage.getItem('gemini_model_name') || 'gemini-2.5-flash';
             
             if (!apiKey) {
@@ -550,16 +549,16 @@ Formatting & TTS Rules:
 
                 chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
                 
-                userText.innerText = aiResponse; 
                 setStatusUI('speak');
                 
+                // 마크다운, 이모지 제거 (문장 기호 .?!는 쪼개기를 위해 보존)
                 const cleanText = aiResponse.replace(/[\*\_~`#>-]/g, '').replace(/\[.*?\]\(.*?\)/g, '').replace(/!\[.*?\]\(.*?\)/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '').trim();
                 
                 speakText(cleanText);
 
             } catch (error) {
                 console.error(error);
-                userText.innerText = "서버 통신 오류가 발생했습니다. API 정보나 네트워크를 확인해주세요.";
+                userText.innerHTML = "서버 통신 오류가 발생했습니다. API 정보나 네트워크를 확인해주세요.";
                 setTimeout(() => {
                     isProcessingAI = false;
                     if(isActive) setStatusUI('listen');
@@ -615,7 +614,7 @@ Formatting & TTS Rules:
                 lastVoiceTime = Date.now(); 
                 if (!isRecording) {
                     isRecording = true; audioChunks = []; recordStartTime = Date.now();
-                    userText.innerText = "Speak now! I'm listening... 🎙️";
+                    userText.innerHTML = "Speak now! I'm listening... 🎙️";
                     userText.className = "text-slate-800 font-extrabold text-[17px] md:text-3xl leading-relaxed transition-all duration-300";
                     let recorderOptions = {};
                     if (typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function') {
@@ -670,7 +669,7 @@ Formatting & TTS Rules:
         }
 
         // ==========================================
-        // 8. 공통 기능 (타이머, TTS 엔진)
+        // 8. 공통 기능 (타이머, TTS 엔진 - 청킹 및 노래방 자막 연동)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() {
@@ -680,17 +679,63 @@ Formatting & TTS Rules:
         }
         function handleModal(choice) { modalEl.classList.add('hidden'); if (choice === 'yes') startActiveMode(); else stopActiveMode(); }
 
-        let voices = []; speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
+        let voices = []; 
+        speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
+
+        let ttsQueue = [];
+        let currentChunkIndex = 0;
 
         function speakText(text) {
-            clearTimeout(window.ttsFallbackTimeout); clearInterval(ttsKeepAliveInterval); speechSynthesis.cancel();
-            if (masterVolume === 0 || !text) { stopSpeaking(); return; }
+            stopSpeaking();
+            if (masterVolume === 0 || !text) return;
             
             isTutorSpeaking = true;
             renderer.startSpeakingAnim('tts');
-            const utterance = new SpeechSynthesisUtterance(text); window.activeUtterance = utterance;
+
+            // 구두점 기준으로 문장 분리
+            const chunkRegex = /[^.?!]+[.?!]+[\s]*|[^.?!]+$/g;
+            const rawChunks = text.match(chunkRegex) || [text];
+            ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
+            currentChunkIndex = 0;
+
+            // 노래방 UI 세팅
+            userText.innerHTML = '';
+            ttsQueue.forEach((chunk, idx) => {
+                const span = document.createElement('span');
+                span.id = `tts-chunk-${idx}`;
+                // 기본 대기 상태: 옅은 회색
+                span.className = "text-slate-400 font-medium transition-colors duration-300 mr-1";
+                span.innerText = chunk + ' ';
+                userText.appendChild(span);
+            });
+
+            playNextTtsChunk();
+        }
+
+        function playNextTtsChunk() {
+            if (currentChunkIndex >= ttsQueue.length) {
+                completeSpeakingSequence();
+                return;
+            }
+
+            // 하이라이트 UI 갱신
+            ttsQueue.forEach((_, idx) => {
+                const span = document.getElementById(`tts-chunk-${idx}`);
+                if (span) {
+                    if (idx === currentChunkIndex) {
+                        span.className = "text-slate-800 font-extrabold transition-colors duration-300 mr-1";
+                    } else {
+                        span.className = "text-slate-400 font-medium transition-colors duration-300 mr-1";
+                    }
+                }
+            });
+
+            const currentText = ttsQueue[currentChunkIndex];
+            const utterance = new SpeechSynthesisUtterance(currentText);
+            window.activeUtterance = utterance;
+            
             utterance.volume = masterVolume;
-            const hasKoreanChars = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text);
+            const hasKoreanChars = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(currentText);
             utterance.lang = hasKoreanChars ? 'ko-KR' : 'en-US';
 
             if (voices.length === 0) voices = speechSynthesis.getVoices();
@@ -702,27 +747,62 @@ Formatting & TTS Rules:
             const basePitch = currentChar === 'xeno' ? 1.3 : 1.5; 
             utterance.rate = Math.min(1.4, Math.max(0.7, 0.95 * (utterance.pitch / basePitch)));
 
+            clearTimeout(window.ttsFallbackTimeout);
+            window.ttsFallbackTimeout = setTimeout(() => { 
+                if (isTutorSpeaking) {
+                    currentChunkIndex++;
+                    playNextTtsChunk();
+                }
+            }, (currentText.length * 150) + 2000);
+
             utterance.onstart = () => {
                 renderer.startSpeakingAnim('tts');
-                ttsKeepAliveInterval = setInterval(() => { if (speechSynthesis.speaking) { speechSynthesis.pause(); speechSynthesis.resume(); } }, 10000); 
             };
             
             utterance.onend = () => {
-                stopSpeaking(); lastVoiceTime = Date.now(); isProcessingAI = false;
-                if (isActive && (currentTab === 'stt' || currentTab === 'tutor') && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
-                    try { recognition.start(); } catch(e){}
-                    setStatusUI('listen');
-                }
+                currentChunkIndex++;
+                playNextTtsChunk();
             };
             
-            utterance.onerror = () => { stopSpeaking(); isProcessingAI = false; if(isActive) setStatusUI('listen'); };
-            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) stopSpeaking(); }, (text.length * 110) + 1500);
+            utterance.onerror = (e) => {
+                console.warn("TTS Error on chunk:", e);
+                currentChunkIndex++;
+                playNextTtsChunk();
+            };
+
             speechSynthesis.speak(utterance);
         }
 
+        function completeSpeakingSequence() {
+            clearTimeout(window.ttsFallbackTimeout);
+            isTutorSpeaking = false; 
+            renderer.stopSpeakingAnim(); 
+            window.activeUtterance = null;
+            
+            lastVoiceTime = Date.now(); 
+            isProcessingAI = false;
+            
+            // 모든 텍스트 진하게 유지
+            ttsQueue.forEach((_, idx) => {
+                const span = document.getElementById(`tts-chunk-${idx}`);
+                if (span) span.className = "text-slate-800 font-extrabold transition-colors duration-300 mr-1";
+            });
+
+            // 마이크 재시작
+            if (isActive && (currentTab === 'stt' || currentTab === 'tutor') && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
+                try { recognition.start(); } catch(e){}
+                setStatusUI('listen');
+            }
+        }
+
         function stopSpeaking() {
-            clearTimeout(window.ttsFallbackTimeout); clearInterval(ttsKeepAliveInterval); speechSynthesis.cancel(); 
-            isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null;
+            clearTimeout(window.ttsFallbackTimeout);
+            speechSynthesis.cancel(); 
+            ttsQueue = []; 
+            currentChunkIndex = 0;
+            isTutorSpeaking = false; 
+            renderer.stopSpeakingAnim(); 
+            window.activeUtterance = null;
         }
 
         function setCharacter(char, keepActive = false) {
