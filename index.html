@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AX LAB AI Tutor</title>
+    <title>AX LAB A.I Tutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
@@ -24,7 +24,7 @@
 
     <!-- 1. 시작 오버레이 -->
     <div id="start-overlay" class="fixed inset-0 bg-[#0f172a] z-[60] flex flex-col items-center justify-center text-white cursor-pointer transition-opacity duration-300" onclick="initAppOnInteraction()">
-        <h2 class="text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc]">AX LAB AI Tutor</h2>
+        <h2 class="text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc]">AX LAB A.I Tutor</h2>
         <p class="text-slate-400 text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
     </div>
 
@@ -45,7 +45,7 @@
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Configuration</h3>
             <p class="text-xs text-slate-500 font-medium mb-6 leading-relaxed">
-                안전한 AI 튜터 사용을 위해 본인의 Gemini API 키와 사용할 모델을 선택해주세요. 입력된 정보는 브라우저에만 보관됩니다.
+                안전한 A.I 튜터 사용을 위해 본인의 Gemini API 키와 사용할 모델을 선택해주세요. 입력된 정보는 브라우저에만 보관됩니다.
             </p>
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1">🔑 Gemini API Key</label>
@@ -74,7 +74,7 @@
         
         <!-- 상단 헤더 및 통합 컨트롤 패널 -->
         <div class="flex flex-col md:flex-row items-center justify-between border-b border-slate-200 pb-4 gap-4">
-            <h1 class="text-[21px] md:text-3xl font-extrabold text-slate-800 flex items-baseline tracking-tight">AX LAB AI Tutor</h1>
+            <h1 class="text-[21px] md:text-3xl font-extrabold text-slate-800 flex items-baseline tracking-tight">AX LAB A.I Tutor</h1>
             
             <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
                 <!-- 언어 & 캐릭터 선택 (강제 동기화) -->
@@ -121,13 +121,13 @@
             <!-- 우측: 상/하 고정 말풍선 영역 -->
             <div class="md:col-span-7 flex flex-col justify-center gap-6">
                 
-                <!-- AI Tutor 말풍선 (상단) -->
+                <!-- A.I Tutor 말풍선 (상단) -->
                 <div id="tutor-bubble-container" class="bubble-container py-6 px-8 md:p-10 rounded-[2.5rem] bg-[#f4faff] border-2 border-slate-200 flex flex-col w-full min-h-[160px] shadow-sm relative transition-colors duration-500">
                     <div class="flex items-center gap-2 mb-2">
                         <span id="tutor-icon" class="text-sm">🐻‍❄️</span>
-                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider">AI Tutor</span>
+                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider">A.I Tutor</span>
                     </div>
-                    <!-- 폰트 축소 및 굵기 완화 -->
+                    <!-- 폰트 축소, 볼드 및 이텔릭 제거 -->
                     <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-xl leading-relaxed transition-all duration-300">
                         Waiting to start...
                     </div>
@@ -142,7 +142,6 @@
                                 <span id="status-text" class="text-slate-400">Ready</span>
                             </div>
                         </div>
-                        <!-- 폰트 축소, 이텔릭 제거 -->
                         <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed">
                             Click START to speak...
                         </div>
@@ -196,24 +195,27 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. AI Tutor 시스템 프롬프트 
+        // 2. AI Tutor 시스템 프롬프트 (난이도 극강 하향)
         // ==========================================
         const SYSTEM_INSTRUCTION = `
-You are the AI Tutor engine for 'AX LAB English' (XENOIS). You have TWO distinct personas. 
+You are the 'AX LAB A.I Tutor'. You have TWO personas. 
 You MUST analyze the user's input language.
 - If responding in Korean, you MUST act as XENO and prepend [XENO] to your response.
 - If responding in English, you MUST act as XENA and prepend [XENA] to your response.
 
 Persona 1: [XENO] - The Science Tutor (Fox)
 - Language: Strictly Korean.
+- Tone: Very kind, like talking to a 7-year-old child. 아주 쉽고 단순한 초등학교 1학년 수준의 한국어 단어만 사용하세요. 어려운 과학 용어는 절대 쓰지 마세요.
 - Output Tag: [XENO]
 
 Persona 2: [XENA] - The Language Tutor (Polar Bear)
 - Language: Strictly English.
+- Tone: Extremely basic English (Pre-A1 level). Use ONLY phonics-level words (e.g., dog, cat, happy, good, apple) and very simple present tense. Max 5-7 words per sentence. NEVER use big words.
 - Output Tag: [XENA]
 
-CRITICAL LENGTH LIMIT:
-- Keep your total response under 15 words. Be direct and extremely brief.
+CRITICAL LENGTH & DIFFICULTY LIMIT:
+- Keep your total response under 15 words.
+- Be direct, extremely simple, and brief. NEVER use complex words or long sentences. If you use difficult words, you fail.
         `;
 
         // ==========================================
@@ -273,7 +275,7 @@ CRITICAL LENGTH LIMIT:
         }
 
         // ==========================================
-        // 4. 언어 셋팅 & 퀵 메뉴
+        // 4. 언어 셋팅 & 퀵 메뉴 (STT 강제 갱신 로직 추가)
         // ==========================================
         function setLanguage(langCode, fromAI = false) {
             sttLang = langCode;
@@ -288,8 +290,8 @@ CRITICAL LENGTH LIMIT:
                 if (!fromAI) setCharacter('xena');
             }
             
+            // UI를 통해 언어가 바뀌었을 때 STT가 동작 중이면 껐다 켬으로써 onend 이벤트를 통해 새로운 언어 적용
             if (recognition && isActive && !fromAI) {
-                recognition.lang = sttLang;
                 recognition.stop(); 
             }
         }
@@ -311,7 +313,6 @@ CRITICAL LENGTH LIMIT:
         // 5. UI 상태 변화 (외곽선 강조 로직 포함)
         // ==========================================
         function setStatusUI(state) {
-            // 초기화
             tutorBubbleContainer.classList.remove('border-slate-200', 'border-orange-400', 'border-blue-400');
             userBubbleContainer.classList.remove('border-slate-200', 'border-rose-400', 'bg-[#fffdf0]', 'bg-[#f8fafc]');
 
@@ -333,7 +334,6 @@ CRITICAL LENGTH LIMIT:
                 userText.innerHTML = "Speak now...";
                 userText.className = "text-slate-400 font-medium text-[15px] md:text-xl transition-all duration-300 leading-relaxed";
                 
-                // 마이크 켜졌을 때 유저 말풍선 테두리 빨간색 강조
                 userBubbleContainer.classList.add('bg-[#fffdf0]', 'border-rose-400');
                 tutorBubbleContainer.classList.add('border-slate-200');
             } else if (state === 'process') {
@@ -351,7 +351,6 @@ CRITICAL LENGTH LIMIT:
                 statusIcon.innerText = "🔊";
                 statusIcon.className = "";
                 
-                // 튜터가 말할 때 튜터 말풍선 테두리 강조 (여우는 주황, 곰은 파랑)
                 userBubbleContainer.classList.add('bg-[#f8fafc]', 'border-slate-200');
                 tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
@@ -367,7 +366,6 @@ CRITICAL LENGTH LIMIT:
                 tutorIcon.innerText = "🐻‍❄️";
                 tutorBubbleContainer.classList.add('bg-[#f4faff]');
             }
-            // 소리나는 중이라면 테두리 컬러 갱신
             if(isTutorSpeaking) setStatusUI('speak'); 
         }
 
@@ -381,7 +379,7 @@ CRITICAL LENGTH LIMIT:
         async function verifyAndSaveApiKey() { const inputEl = document.getElementById('api-key-input'); const modelSelectEl = document.getElementById('api-model-select'); const errorEl = document.getElementById('api-key-error'); const key = inputEl.value.trim(); const modelName = modelSelectEl.value; if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } document.getElementById('btn-save-key-text').innerText = "Verifying..."; errorEl.classList.add('hidden'); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); if (response.ok) { localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); document.getElementById('apikey-modal').classList.add('hidden'); } else { throw new Error("API 연동 실패"); } } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } finally { document.getElementById('btn-save-key-text').innerText = "Verify & Save"; } }
 
         // ==========================================
-        // STT Logic
+        // STT Logic (언어 동기화 보장 적용)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -406,9 +404,27 @@ CRITICAL LENGTH LIMIT:
                 }
             };
             recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
-            recognition.onend = () => { if (isActive && !isTutorSpeaking && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { try { recognition.start(); } catch(e) {} setStatusUI('listen'); } };
+            
+            recognition.onend = () => { 
+                if (isActive && !isTutorSpeaking && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
+                    try { 
+                        // STT 재시작 직전에 반드시 lang을 재할당하여 엔진 캐싱 버그를 우회합니다.
+                        recognition.lang = sttLang;
+                        recognition.start(); 
+                    } catch(e) {} 
+                    setStatusUI('listen'); 
+                } 
+            };
         }
-        function startSttLogic() { sttErrorOccurred = false; if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
+        
+        function startSttLogic() { 
+            sttErrorOccurred = false; 
+            if (recognition) { 
+                // STT 시작 직전에 반드시 lang 할당
+                recognition.lang = sttLang; 
+                try { recognition.start(); } catch(e) {} 
+            } 
+        }
         function stopSttLogic() { if (recognition) try { recognition.stop(); } catch(e) {} isProcessingAI = false; }
 
         // ==========================================
@@ -432,7 +448,6 @@ CRITICAL LENGTH LIMIT:
                 const data = await response.json();
                 let aiResponse = data.candidates[0].content.parts[0].text.trim();
                 
-                // AI 응답 태그에 맞춰 UI 언어와 캐릭터 강제 동기화 (오작동 방지)
                 if (aiResponse.startsWith('[XENO]')) {
                     setLanguage('ko-KR', true);
                     setCharacter('xeno');
@@ -455,7 +470,7 @@ CRITICAL LENGTH LIMIT:
         }
 
         // ==========================================
-        // TTS Engine (노래방 자막 및 볼드 제거)
+        // TTS Engine 
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -478,7 +493,6 @@ CRITICAL LENGTH LIMIT:
             ttsQueue.forEach((chunk, idx) => {
                 const span = document.createElement('span');
                 span.id = `tts-chunk-${idx}`;
-                // 기본 대기 텍스트: 회색, medium
                 span.className = "text-slate-400 transition-colors duration-300 mr-1";
                 span.innerText = chunk + ' ';
                 tutorText.appendChild(span);
@@ -492,7 +506,6 @@ CRITICAL LENGTH LIMIT:
             ttsQueue.forEach((_, idx) => {
                 const span = document.getElementById(`tts-chunk-${idx}`);
                 if (span) {
-                    // 읽고 있는 텍스트: 진한 검정색, medium (볼드 제거)
                     if (idx === currentChunkIndex) span.className = "text-slate-800 transition-colors duration-300 mr-1";
                     else span.className = "text-slate-400 transition-colors duration-300 mr-1";
                 }
@@ -529,7 +542,11 @@ CRITICAL LENGTH LIMIT:
             });
 
             if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
-                try { recognition.start(); } catch(e){}
+                try { 
+                    // STT 재시작 직전에 반드시 lang을 재할당
+                    recognition.lang = sttLang;
+                    recognition.start(); 
+                } catch(e){}
                 setStatusUI('listen');
             }
         }
@@ -537,7 +554,7 @@ CRITICAL LENGTH LIMIT:
         function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
 
         // ==========================================
-        // 렌더링 엔진 (유지)
+        // 렌더링 엔진 
         // ==========================================
         const renderer = {
             config: {
