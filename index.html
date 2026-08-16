@@ -205,44 +205,44 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. AI Tutor 시스템 프롬프트 (강력한 지식 베이스 주입)
+        // 2. AI Tutor 시스템 프롬프트 (과목 바인딩 삭제 & 통합 지식)
         // ==========================================
         const SYSTEM_INSTRUCTION = `
 You are the 'AX LAB Tutor'. 
 Today's Date: August 17, 2026.
 
-[KNOWLEDGE BASE: YOU MUST KNOW THIS]
-Both personas (Xeno and Xena) share this exact same knowledge.
+[KNOWLEDGE BASE: BOTH PERSONAS KNOW ALL OF THIS PERFECTLY]
 - Target Audience: 3rd Grade (9-10 years old).
-- Program: AX LAB English (XENOIS), based on K-CLIL (Science + English).
+- Program: AX LAB English (XENOIS), K-CLIL (Science + English).
 - Current Lesson: Unit 1 - Egyptian Pyramids.
-- Core Science Concepts: Force, push, pull, friction, gravity.
-- Core Tools: Ramp (slide/inclined plane), Lever (stick), Balance scale.
+- Core Science: Force, push, pull, friction, gravity.
+- Core Tools: Ramp (slide), Lever (stick), Balance scale.
 - Key Expressions: "They use ~", "push ~ away", "pull ~ close".
 - The Story: Ancient Egyptians building the giant Pyramids.
-- The Experiment: Exploring how to move heavy stone blocks using ramps and wooden logs (reducing friction by rolling).
-- AI Tool Usage: You are an AI tutor that listens, speaks, and helps kids learn science and English simultaneously. Use the UI buttons.
+- The Experiment: Exploring how to move heavy stone blocks using ramps and wooden logs (rolling to reduce friction).
+- AI Tool: Listens, speaks, and helps kids learn science and English.
 
-[STRICT PERSONA & LANGUAGE BINDING]
+[STRICT LANGUAGE & PERSONA BINDING - NO SUBJECT RESTRICTIONS]
+- The choice of Persona depends SOLELY on the user's language, NOT the subject. Both personas can teach science AND English.
 - If the user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
 - If the user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
 
-Persona 1: [XENO] - The Science Tutor (Fox)
-- Language: Strictly Korean.
-- Role: Explains Unit 1 science concepts, experiments, and stories kindly like a tutor for 3rd graders. Know all the science facts.
+Persona 1: [XENO] (Fox)
+- Language: Korean only.
+- Tone: 친절하고 명확한 초등학교 3학년 수준의 튜터.
 - Output Tag: [XENO]
 
-Persona 2: [XENA] - The Language Tutor (Polar Bear)
-- Language: Strictly English.
-- Role: Teaches the English expressions of Unit 1. Uses VERY simple, basic EFL words (Pre-A1). Knows the science concepts but explains them in very easy English.
+Persona 2: [XENA] (Polar Bear)
+- Language: English only.
+- Tone: EFL beginner level. VERY simple, basic English words (Pre-A1). Short sentences.
 - Output Tag: [XENA]
 
 CRITICAL LENGTH RULE:
-- Keep responses under 30 words total (2-3 short sentences). Very brief and conversational!
+- Keep responses under 30 words total (2-3 short sentences). Very conversational!
         `;
 
         // ==========================================
-        // 3. 메인 컨트롤 로직
+        // 3. 메인 컨트롤 및 끼어들기(Interrupt) 로직
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -259,8 +259,7 @@ CRITICAL LENGTH RULE:
 
         function playWelcomeMessage() {
             if (isActive) return; 
-            // "A.I" 제거
-            const msg = "Welcome! I'm AX LAB Tutor. Please, click the Start button.";
+            const msg = "Welcome! I'm AX LAB A.I Tutor. Please, click the Start button.";
             speakText(msg);
         }
 
@@ -298,6 +297,22 @@ CRITICAL LENGTH RULE:
             }
         }
 
+        // ✋ 학생 끼어들기(Interrupt) 기능
+        window.interruptTutor = function() {
+            if (isTutorSpeaking) {
+                stopSpeaking(); // TTS 강제 종료 및 큐 초기화
+                
+                // 마이크 즉시 재개
+                if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
+                    try { 
+                        recognition.lang = sttLang;
+                        recognition.start(); 
+                    } catch(e){}
+                    setStatusUI('listen');
+                }
+            }
+        };
+
         // ==========================================
         // 4. 언어 셋팅 & 퀵 메뉴
         // ==========================================
@@ -333,7 +348,7 @@ CRITICAL LENGTH RULE:
         }
 
         // ==========================================
-        // 5. UI 상태 변화 
+        // 5. UI 상태 변화 (끼어들기 버튼 노출 포함)
         // ==========================================
         function setStatusUI(state) {
             tutorBubbleContainer.classList.remove('border-slate-200', 'border-orange-400', 'border-blue-400');
@@ -374,6 +389,17 @@ CRITICAL LENGTH RULE:
                 statusIcon.innerText = "🔊";
                 statusIcon.className = "";
                 
+                // 끼어들기 버튼 UI 삽입
+                userText.innerHTML = `
+                    <div class="flex flex-col items-start justify-center space-y-2 mt-1">
+                        <span class="text-slate-400 text-sm font-medium">Listening paused...</span>
+                        <button onclick="interruptTutor()" class="px-6 py-2.5 bg-rose-50 border border-rose-200 text-rose-500 font-bold text-sm rounded-full shadow-sm hover:bg-rose-100 transition-all active:scale-95 flex items-center gap-2">
+                            ✋ 말 끊고 질문하기
+                        </button>
+                    </div>
+                `;
+                userText.className = "w-full transition-all duration-300";
+                
                 userBubbleContainer.classList.add('bg-[#f8fafc]', 'border-slate-200');
                 tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
@@ -402,7 +428,7 @@ CRITICAL LENGTH RULE:
         async function verifyAndSaveApiKey() { const inputEl = document.getElementById('api-key-input'); const modelSelectEl = document.getElementById('api-model-select'); const errorEl = document.getElementById('api-key-error'); const key = inputEl.value.trim(); const modelName = modelSelectEl.value; if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } document.getElementById('btn-save-key-text').innerText = "Verifying..."; errorEl.classList.add('hidden'); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); if (response.ok) { localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); document.getElementById('apikey-modal').classList.add('hidden'); } else { throw new Error("API 연동 실패"); } } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } finally { document.getElementById('btn-save-key-text').innerText = "Verify & Save"; } }
 
         // ==========================================
-        // STT Logic (의문문 알고리즘 고도화)
+        // STT Logic (한/영 지능형 의문문 완성 알고리즘)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -423,15 +449,23 @@ CRITICAL LENGTH RULE:
                 if (finalTranscript && finalTranscript.trim().length > 1) {
                     let processed = finalTranscript.trim();
                     
-                    // 한국어 의문문 지능형 치환 로직
-                    if (sttLang === 'ko-KR' && !processed.endsWith('?')) {
+                    if (!processed.endsWith('?')) {
                         const stripped = processed.replace(/[.\s]+$/, '');
-                        const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
-                        const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
-                        const casualEndings = /(어|해|야|지)$/;
                         
-                        if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) {
-                            processed = stripped + '?';
+                        if (sttLang === 'ko-KR') {
+                            const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
+                            const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
+                            const casualEndings = /(어|해|야|지)$/;
+                            
+                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) {
+                                processed = stripped + '?';
+                            }
+                        } else if (sttLang === 'en-US') {
+                            // 영어 의문문 시작 어휘 검출 (대소문자 무관)
+                            const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
+                            if (startsWithQuestionWord) {
+                                processed = stripped + '?';
+                            }
                         }
                     }
 
@@ -506,7 +540,7 @@ CRITICAL LENGTH RULE:
         }
 
         // ==========================================
-        // TTS Engine 
+        // TTS Engine (A.I 발음 강제 치환 적용)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -548,7 +582,16 @@ CRITICAL LENGTH RULE:
             });
 
             const currentText = ttsQueue[currentChunkIndex];
-            const utterance = new SpeechSynthesisUtterance(currentText);
+            
+            // 엔진 발음용 텍스트 변환 (시각적 텍스트는 원본 유지)
+            let spokenText = currentText;
+            if (sttLang === 'ko-KR') {
+                spokenText = spokenText.replace(/A\.I/gi, '에이 아이');
+            } else {
+                spokenText = spokenText.replace(/A\.I/gi, 'A I');
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(spokenText);
             window.activeUtterance = utterance;
             utterance.volume = masterVolume;
             utterance.lang = sttLang; 
@@ -560,7 +603,7 @@ CRITICAL LENGTH RULE:
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
             clearTimeout(window.ttsFallbackTimeout);
-            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (currentText.length * 150) + 2000);
+            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 150) + 2000);
 
             utterance.onstart = () => { renderer.startSpeakingAnim('tts'); };
             utterance.onend = () => { currentChunkIndex++; playNextTtsChunk(); };
