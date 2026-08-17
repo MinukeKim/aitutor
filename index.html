@@ -60,6 +60,25 @@
                 </label>
             </div>
 
+            <!-- 난이도 옵션 복구 (디폴트 Lv 1) -->
+            <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎓 튜터 난이도 및 스타일</label>
+            <div class="flex flex-col gap-2.5 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+                    <input type="radio" name="tutor-level" value="1" checked class="mt-1 accent-indigo-600">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-indigo-600">Lv 1. 핵심 요약 모드 (기본)</span>
+                        <span class="text-xs text-slate-500">단문 3개 이하. 요청 시에만 지식 확장.</span>
+                    </div>
+                </label>
+                <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+                    <input type="radio" name="tutor-level" value="2" class="mt-1 accent-indigo-600">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-indigo-600">Lv 2. 질문 유도 모드</span>
+                        <span class="text-xs text-slate-500">단문 5개 이하. 끝에 대화를 유도하는 질문 포함.</span>
+                    </div>
+                </label>
+            </div>
+
             <div id="api-key-error" class="hidden text-rose-500 text-xs font-bold mb-4 bg-rose-50 p-3 rounded-lg border border-rose-100"></div>
             
             <div class="flex gap-3 mt-2">
@@ -79,7 +98,6 @@
             <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB AI Tutor</h1>
             
             <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
-                
                 <button id="top-action-btn" onclick="toggleActiveMode()" class="px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5">
                     <span id="top-btn-icon">▶</span>
                     <span id="top-btn-text">START</span>
@@ -109,24 +127,34 @@
             <!-- 대화 및 메뉴 영역 -->
             <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-center gap-5">
                 
-                <!-- 튜터 말풍선 (동적 숏컷 렌더링 위치 포함) -->
+                <!-- 튜터 말풍선 -->
                 <div id="tutor-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
-                    <!-- 본문 텍스트 -->
                     <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300">
                         Waiting to start...
                     </div>
-                    <!-- 동적 숏컷 컨테이너 -->
-                    <div id="dynamic-shortcuts-container" class="hidden flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200/60">
-                        <!-- 버튼들이 여기에 생성됩니다 -->
-                    </div>
                 </div>
 
-                <!-- 사용자 말풍선 영역 -->
+                <!-- 사용자 말풍선 및 퀵 메뉴 영역 -->
                 <div class="w-full">
                     <div id="user-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
                         <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left">
                             Click START to speak...
                         </div>
+                    </div>
+                    
+                    <!-- 퀵 메뉴 (정적 메뉴 유지, 동적 숏컷은 여기에 Prepend 됨) -->
+                    <div id="quick-menu-container" class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
+                        <!-- 동적 숏컷이 여기에 맨 앞으로 삽입됩니다 -->
+                        
+                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
+                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
+                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
+                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
+                        
+                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
+                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
+                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
+                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
                     </div>
                 </div>
 
@@ -138,7 +166,7 @@
         // ==========================================
         // 1. 단일 상태 머신 및 전역 변수
         // ==========================================
-        let appState = 'IDLE'; // 'IDLE', 'MANUAL_READY', 'LISTENING', 'THINKING', 'SPEAKING'
+        let appState = 'IDLE'; 
         let listeningMode = 'auto'; 
         
         let currentChar = 'xena'; 
@@ -147,18 +175,15 @@
         let chatHistory = [];
         let welcomeIntervalId = null;
         
-        // 안드로이드 중복 버그 방지용 변수
         let sttSilenceTimeout = null; 
         let lastRecognizedText = '';
-
-        // TTS 에러 복구 타이머
         let ttsFallbackTimeout = null;
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const userBubbleContainer = document.getElementById('user-bubble-container');
         const tutorText = document.getElementById('tutor-text');
-        const dynamicShortcutsContainer = document.getElementById('dynamic-shortcuts-container');
         const userText = document.getElementById('user-text');
+        const quickMenuContainer = document.getElementById('quick-menu-container');
         
         const topActionBtn = document.getElementById('top-action-btn');
         const topBtnIcon = document.getElementById('top-btn-icon');
@@ -166,9 +191,20 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. 동적 시스템 프롬프트 (v8 마스터 데이터셋 주입)
+        // 2. 동적 시스템 프롬프트 (난이도 복구 및 v8 데이터셋)
         // ==========================================
         function getSystemInstruction() {
+            // 난이도(레벨 1, 2) 동적 적용 로직 복구 완료
+            const levelEl = document.querySelector('input[name="tutor-level"]:checked');
+            const level = levelEl ? levelEl.value : "1"; 
+
+            let levelInstruction = "";
+            if (level === "1") {
+                levelInstruction = "- Length: Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.";
+            } else if (level === "2") {
+                levelInstruction = "- Length: Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.";
+            }
+
             return `
 # AX LAB English: AI 튜터 파인튜닝 및 프롬프트 엔지니어링 마스터 데이터셋 v8 (Korean Edition)
 
@@ -188,6 +224,7 @@
 
 ## 4. 안전 및 윤리적 가드레일 (Stern Guardian Mode)
 *   아동이 비속어나 장난을 칠 경우, 극도로 이성적이고 단호하게 선을 긋고 정상적인 과학 탐험으로 복귀를 제안합니다.
+    > [Q: 피라미드 돌 옮기기] [Q: AX LAB 회사 비전]
 
 ## 5. 동적 숏컷 텍스트 메뉴 자동 생성 지침 (중요)
 모바일 환경 사용자를 위해 **매 답변의 가장 마지막 줄에 대안용 '동적 숏컷 키워드 질문'을 2~3개 자동 생성**해야 합니다.
@@ -196,18 +233,26 @@
 *   **예시**: \`[Q: 경사로 작동원리]\`, \`[Q: 밀기와 당기기 차이]\`, \`[Q: 1차시 키워드 퀴즈]\`, \`[Q: 제노이즈 특허번호]\`
 *   반드시 독립적인 줄바꿈을 적용하여 본문과 철저하게 분리하십시오.
 
+## 6. 초등 3학년 1학기 1단원 교과 마스터 데이터셋 (G3-1 Unit 1)
+*   **단원 프롤로그**: Egypt, river, build, pyramid, move, stone. "How do they build big pyramids?"
+*   **1-1화**: force, pull, push, rope, ramp. "Force makes things move."
+*   **1-2화**: pushing, pulling. "They push big stones forward. They also pull heavy stones close."
+
+## 7. 동적 숏컷 기반 대화 시나리오 (예시 데이터)
+*   [Q: They use ropes] [Q: 1차시 단어퀴즈] [Q: AX LAB 특허일자]
+*   [Q: 무거울수록 큰 힘 필요] [Q: 상자밀기 실험방법]
+
 [STRICT LANGUAGE BINDING]
 - If user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
 - If user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
 
 [LEVEL INSTRUCTION: FOLLOW STRICTLY]
-- Length: Max 3 short sentences for the main response.
-- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.
+${levelInstruction}
             `;
         }
 
         // ==========================================
-        // 3. 앱 초기화 및 설정
+        // 3. 앱 초기화 및 동적 숏컷 최초 세팅
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -216,22 +261,65 @@
             try { const unlock = new SpeechSynthesisUtterance(''); unlock.volume = 0; window.speechSynthesis.speak(unlock); } catch (e) {}
             
             initDeviceSettings();
+            
+            // 🔥 v8 데이터셋에서 학습된 초기 숏컷 추출하여 퀵 메뉴에 삽입
+            extractInitialShortcutsFromData();
+
             setLanguage('en-US'); 
             playWelcomeMessage();
             welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
         }
 
+        function extractInitialShortcutsFromData() {
+            const sysText = getSystemInstruction();
+            const regex = /\[Q:\s*(.*?)\s*\]/g;
+            let matches = [];
+            let match;
+            while ((match = regex.exec(sysText)) !== null) { matches.push(match[1]); }
+            
+            if (matches.length > 0) {
+                // 중복 제거 후 랜덤하게 3개 추출
+                let uniqueMatches = [...new Set(matches)];
+                let selected = uniqueMatches.sort(() => 0.5 - Math.random()).slice(0, 3);
+                addDynamicShortcutsToMenu(selected, true);
+            }
+        }
+
+        // 🌟 퀵 메뉴 컨테이너의 '맨 앞(Prepend)'에 동적 버튼 추가
+        function addDynamicShortcutsToMenu(shortcuts, isInit = false) {
+            if (!shortcuts || shortcuts.length === 0) return;
+            
+            // 배열을 뒤집어야 prepend 시 순서대로 배치됨
+            shortcuts.reverse().forEach(sc => {
+                const btn = document.createElement('button');
+                btn.onclick = () => sendQuickQuery(sc, sttLang);
+                
+                // 초기 로딩 숏컷(✨)과 대화 중 숏컷(🔥) 시각적 구분
+                if (isInit) {
+                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 text-purple-700 font-bold text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
+                    btn.innerText = `✨ ${sc}`;
+                } else {
+                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-rose-50 border border-rose-200 hover:border-rose-400 hover:bg-rose-100 text-rose-700 font-bold text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
+                    btn.innerText = `🔥 ${sc}`;
+                }
+                quickMenuContainer.prepend(btn);
+            });
+        }
+
         function initDeviceSettings() {
             const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
             const isMobileSize = window.innerWidth < 768;
+            
             const savedMode = localStorage.getItem('listen_mode');
-            if (savedMode) {
-                listeningMode = savedMode;
-            } else {
-                listeningMode = (isTouchDevice && isMobileSize) ? 'manual' : 'auto';
-            }
+            if (savedMode) listeningMode = savedMode; 
+            else listeningMode = (isTouchDevice && isMobileSize) ? 'manual' : 'auto';
+            
             const modeRadios = document.getElementsByName('listen-mode');
             for(let radio of modeRadios) { if(radio.value === listeningMode) radio.checked = true; }
+            
+            const savedLevel = localStorage.getItem('tutor_level') || '1';
+            const levelRadio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
+            if(levelRadio) levelRadio.checked = true;
         }
 
         function playWelcomeMessage() {
@@ -294,7 +382,7 @@
 
         function sendQuickQuery(text, langCode) {
             if (!hasInitialized) initAppOnInteraction();
-            stopSpeaking(); // TTS 재생 중 클릭 시 즉시 중단
+            stopSpeaking(); 
             if (appState === 'IDLE') {
                 topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
                 topBtnIcon.innerText = "■"; topBtnText.innerText = "STOP";
@@ -369,7 +457,7 @@
         }
 
         // ==========================================
-        // 설정 Modal 로직
+        // 설정 Modal 로직 (난이도 복원 반영)
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
@@ -384,6 +472,9 @@
             const key = document.getElementById('api-key-input').value.trim(); 
             const modelName = document.getElementById('api-model-select').value; 
             const errorEl = document.getElementById('api-key-error'); 
+            const levelVal = document.querySelector('input[name="tutor-level"]:checked').value;
+            const modeVal = document.querySelector('input[name="listen-mode"]:checked').value;
+
             if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } 
             document.getElementById('btn-save-key-text').innerText = "저장 중..."; errorEl.classList.add('hidden'); 
             
@@ -391,8 +482,8 @@
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); 
                 if (response.ok) { 
                     localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); 
-                    const modeVal = document.querySelector('input[name="listen-mode"]:checked').value;
                     localStorage.setItem('listen_mode', modeVal); listeningMode = modeVal;
+                    localStorage.setItem('tutor_level', levelVal);
                     document.getElementById('apikey-modal').classList.add('hidden'); 
                 } else throw new Error("API 연동 실패"); 
             } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } 
@@ -477,18 +568,18 @@
                 if (aiResponse.startsWith('[XENO]')) { setLanguage('ko-KR', true); setCharacter('xeno'); aiResponse = aiResponse.replace('[XENO]', '').trim(); } 
                 else if (aiResponse.startsWith('[XENA]')) { setLanguage('en-US', true); setCharacter('xena'); aiResponse = aiResponse.replace('[XENA]', '').trim(); }
 
-                // 🌟 동적 숏컷 정규식 파싱 및 분리
+                // 🌟 동적 숏컷 정규식 파싱 및 추출
                 const shortcutRegex = /\[Q:\s*(.*?)\s*\]/g;
                 let shortcuts = [];
                 let match;
                 while ((match = shortcutRegex.exec(aiResponse)) !== null) { shortcuts.push(match[1]); }
                 
-                // 🌟 숏컷을 제거한 순수 텍스트만 히스토리 및 TTS로 전달
+                // 🌟 숏컷을 제거한 순수 텍스트만 히스토리 및 화면/TTS로 전달
                 let cleanResponseText = aiResponse.replace(shortcutRegex, '').trim();
                 chatHistory.push({ role: "model", parts: [{ text: cleanResponseText }] });
                 
-                // 🌟 숏컷 UI 동적 렌더링 함수 호출
-                renderDynamicShortcuts(shortcuts);
+                // 🌟 파싱된 AI의 실시간 숏컷을 기존 퀵 메뉴 맨 앞에 추가
+                addDynamicShortcutsToMenu(shortcuts, false);
                 
                 speakText(cleanResponseText, false);
             } catch (error) {
@@ -497,28 +588,8 @@
             }
         }
 
-        // 🌟 동적 숏컷 렌더링 컨트롤러
-        function renderDynamicShortcuts(shortcuts) {
-            dynamicShortcutsContainer.innerHTML = ''; // 기존 버튼 비우기
-            if (shortcuts && shortcuts.length > 0) {
-                dynamicShortcutsContainer.classList.remove('hidden');
-                dynamicShortcutsContainer.classList.add('flex');
-                shortcuts.forEach(sc => {
-                    const btn = document.createElement('button');
-                    // 언어 설정은 현재 상태(sttLang)를 유지하며 쿼리 전송
-                    btn.onclick = () => sendQuickQuery(sc, sttLang);
-                    btn.className = "px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 hover:border-indigo-400 text-slate-700 text-xs md:text-sm font-bold rounded-full transition-all shadow-sm shrink-0";
-                    btn.innerText = `💡 Q. ${sc}`;
-                    dynamicShortcutsContainer.appendChild(btn);
-                });
-            } else {
-                dynamicShortcutsContainer.classList.add('hidden');
-                dynamicShortcutsContainer.classList.remove('flex');
-            }
-        }
-
         // ==========================================
-        // 단일 TTS Engine (15초 Fallback 방어 적용)
+        // 단일 TTS Engine (15초 Fallback 방어 유지)
         // ==========================================
         function speakText(text, isWelcomeOnly) {
             stopSpeaking();
@@ -532,7 +603,7 @@
             const utterance = new SpeechSynthesisUtterance(spokenText);
             utterance.volume = 1.0; utterance.lang = sttLang; utterance.pitch = 1.0; utterance.rate = 1.0;
 
-            // 방어선: 글자당 200ms 계산 Fallback (팝 노이즈 유발 pause/resume 꼼수 제거)
+            // 방어선: 글자당 200ms 계산 Fallback 타이머
             clearTimeout(ttsFallbackTimeout);
             ttsFallbackTimeout = setTimeout(() => {
                 if (appState === 'SPEAKING') {
@@ -554,7 +625,7 @@
         function stopSpeaking() { clearTimeout(ttsFallbackTimeout); speechSynthesis.cancel(); renderer.stopSpeakingAnim(); }
 
         // ==========================================
-        // 렌더링 엔진 (FPS 스로틀링 보존)
+        // 렌더링 엔진 (건드리지 않음)
         // ==========================================
         const renderer = {
             config: { "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } },
