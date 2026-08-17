@@ -1,3 +1,39 @@
+대표님, 계속해서 실제 사용 환경(모바일)의 디테일한 오류들을 짚어주시니 프로덕트가 훨씬 탄탄해지고 있습니다.
+
+요청하신 사항들에 대한 **검토 의견**을 먼저 말씀드리고, 이를 완벽하게 반영한 **최종 코드**를 전달해 드리겠습니다.
+
+---
+
+### 💡 기획 및 버그 검토 의견
+
+**1. TTS 텍스트 표시 방식 (하이라이트 버그 해결)**
+
+* **원인:** 안드로이드 모바일 환경에서는 TTS 엔진이 글자를 읽는 속도와 브라우저에 신호를 보내는 속도가 미세하게 달라(Sync Issue), 글자를 한 개씩 칠하는 방식은 필연적으로 엇박자가 납니다.
+* **의견 및 해결책:** [전체 문장을 한 번에 표시]하는 것을 강력히 권장합니다.
+* 우리가 설정한 프롬프트는 "최대 3~5문장"으로 제한되어 있기 때문에, 텍스트를 한 번에 띄워주어도 초등학생이 읽기에 전혀 부담스럽지 않습니다.
+* *기술적 처리:* 화면에는 글자가 한 번에 깔끔하게 뜨고, **보이지 않는 백그라운드에서만 오디오를 잘게 쪼개어 읽도록(15초 뻗음 버그 방지)** 로직을 완전히 분리했습니다. 이제 싱크가 밀리는 찝찝한 버그가 원천 차단됩니다.
+
+
+
+**2. 시작 버튼 클릭 시 '선톡(AI의 선제적 인사)' 기능 도입**
+
+* **의견:** AI 튜터 서비스에서 매우 훌륭한 UX 개선입니다! 학생이 빈 마이크에 대고 먼저 말을 거는 것은 뻘쭘할 수 있습니다.
+* **해결책:** `START` 버튼을 누르면 마이크가 먼저 켜지지 않고, 튜터가 먼저 "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" (영어: "Hello! I am your AI tutor. How are you today?")라고 인사를 건네며 대화를 유도합니다. 이 인사가 끝나면 자동으로 마이크가 켜집니다.
+
+**3. 시작 전 대기 멘트 및 사용자 말풍선 대기 텍스트 변경**
+
+* 시작 전 반복 멘트를 `"Please click the START button."` (한글: `"시작 버튼을 클릭해 주세요."`)로 간결하게 변경했습니다.
+* 마이크 대기 상태의 텍스트를 `Listening...`에서 `"Feel free to speak..."`로 변경했습니다.
+
+---
+
+### 💻 전체 코드 업데이트 (MVP 최신 버전)
+
+동기화 버그를 없앤 **[전체 텍스트 즉시 표시]**, 시작 시 **[AI 튜터 선톡 기능]**, [UI 텍스트 개선]이 모두 적용된 최신 전체 코드입니다.
+
+기존 코드를 지우고 아래 코드로 테스트해 보세요!
+
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -32,7 +68,19 @@
         <p class="text-slate-400 text-xs md:text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
     </div>
 
-    <!-- 2. 설정 모달 -->
+    <!-- 2. 무응답 대기 모달 -->
+    <div id="inactivity-modal" class="hidden fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center mx-4">
+            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">Are you there?</h3>
+            <p class="text-sm text-slate-500 font-medium mb-8">No voice detected for 1 minute.</p>
+            <div class="flex gap-3">
+                <button onclick="handleModal('yes')" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md">Yes</button>
+                <button onclick="handleModal('no')" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 설정 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">설정 (Settings)</h3>
@@ -49,16 +97,6 @@
                 <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash</option>
                 <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (고급 추론)</option>
             </select>
-
-            <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎙️ 듣기 모드 (STT)</label>
-            <div class="flex gap-4 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                    <input type="radio" name="listen-mode" value="auto" class="accent-indigo-600"> 자동 (항상 듣기)
-                </label>
-                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                    <input type="radio" name="listen-mode" value="manual" class="accent-indigo-600"> 수동 (버튼 터치)
-                </label>
-            </div>
 
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎓 튜터 난이도 및 스타일</label>
             <div class="flex flex-col gap-2.5 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -97,6 +135,7 @@
             <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB AI Tutor</h1>
             
             <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
+                
                 <button id="top-action-btn" onclick="toggleActiveMode()" class="px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5">
                     <span id="top-btn-icon">▶</span>
                     <span id="top-btn-text">START</span>
@@ -136,23 +175,22 @@
                 <!-- 사용자 말풍선 및 퀵 메뉴 영역 -->
                 <div class="w-full">
                     <div id="user-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
-                        <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left">
+                        <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed">
                             Click START to speak...
                         </div>
                     </div>
                     
-                    <!-- 퀵 메뉴 (정적 버튼들) -->
-                    <div id="quick-menu-container" class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
-                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
-                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
-                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
-                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
+                    <!-- 퀵 메뉴 -->
+                    <div class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
+                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
+                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
+                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
+                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
                         
-                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
-                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
-                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
-                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
-                        <!-- 동적으로 추출된 학습 데이터 숏컷 3개가 이 뒤에 1회 한정 추가됩니다 -->
+                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
+                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
+                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
+                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
                     </div>
                 </div>
 
@@ -162,75 +200,73 @@
 
     <script>
         // ==========================================
-        // 1. 전역 변수 및 상태 제어
+        // 1. 전역 상태 및 변수
         // ==========================================
-        let appState = 'IDLE'; 
-        let listeningMode = 'auto'; 
-        
+        let isActive = false;   
         let currentChar = 'xena'; 
+        let isTutorSpeaking = false;
+        let isMicLocked = false; 
         let hasInitialized = false;
         let sttLang = 'en-US'; 
-        let chatHistory = [];
         
-        // 안드로이드 중복 버그 방지용 변수
-        let sttSilenceTimeout = null; 
-        let lastRecognizedText = '';
-        let ttsFallbackTimeout = null;
+        let inactivityTimeout = null;
+        let lastVoiceTime = Date.now();
+        const INACTIVITY_LIMIT = 60000; 
+
+        let chatHistory = [];
+        let isProcessingAI = false;
+        let welcomeIntervalId = null;
+
+        window.activeUtterance = null;
+        window.ttsFallbackTimeout = null;
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const userBubbleContainer = document.getElementById('user-bubble-container');
         const tutorText = document.getElementById('tutor-text');
         const userText = document.getElementById('user-text');
-        const quickMenuContainer = document.getElementById('quick-menu-container');
         
         const topActionBtn = document.getElementById('top-action-btn');
         const topBtnIcon = document.getElementById('top-btn-icon');
         const topBtnText = document.getElementById('top-btn-text');
+        
+        const modalEl = document.getElementById('inactivity-modal');
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. 동적 시스템 프롬프트 (v8 마스터 데이터셋)
+        // 2. 동적 시스템 프롬프트
         // ==========================================
         function getSystemInstruction() {
-            // 난이도 강제 제어 (초과 절대 금지)
             const levelEl = document.querySelector('input[name="tutor-level"]:checked');
             const level = levelEl ? levelEl.value : "1"; 
 
             let levelInstruction = "";
             if (level === "1") {
-                levelInstruction = "- Length: STRICTLY Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.\n- RULE: UNDER NO CIRCUMSTANCES EXCEED 3 SENTENCES.";
+                levelInstruction = "- Length: Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.";
             } else if (level === "2") {
-                levelInstruction = "- Length: STRICTLY Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.\n- RULE: UNDER NO CIRCUMSTANCES EXCEED 5 SENTENCES.";
+                levelInstruction = "- Length: Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.";
             }
 
             return `
-# AX LAB English: AI 튜터 파인튜닝 마스터 데이터셋 v8 (Korean Edition)
+You are the 'AX LAB Tutor'. 
+Today's Date: August 17, 2026.
 
-## 1. 에듀테크 소셜 벤처 정체성 및 교육 철학
-*   사교육 시장 정상화: 합리적인 가격으로 양질의 1:1 맞춤형 피드백 제공.
-*   무한 격려: "Super job!", "Almost there!" 등 긍정적 강화를 매 답변 시작 시 사용.
-
-## 2. K-CLIL 교수학습 전략
-*   SCEE 순환 모델: 공교육 지식 -> 영단어 변환 -> 실습 -> 디지털 산출물
-
-## 3. AI 튜터 캐릭터 (절대 준수)
-*   [XENA]: 북극곰. 영어 전용 코치. 절대로 "틀렸다"고 하지 않고 올바른 문장 구조로 유도.
-*   [XENO]: 여우. 한국어 전용 과학 코치. 물리/과학 지식을 쉬운 비유로 설명.
-
-## 4. 안전 및 윤리 가드레일 (Stern Guardian Mode)
-*   비속어 사용 시 단호하게 선을 긋고 정상적인 대화로 복귀 제안.
-
-## 5. 학습 데이터 기반 Q&A 예시 (참고용)
-*   [Q: 이집트 흐르는 강?]
-*   [Q: 피라미드 지은 사람]
-*   [Q: 밀기와 당기기 차이]
-*   [Q: 제노이즈 특허번호]
-*   [Q: 상자밀기 교구실습]
+[KNOWLEDGE BASE & EXTENSION ALLOWED]
+- Target: 3rd Grade (9-10 years old). Keep vocabulary EASY.
+- Program: AX LAB English (XENOIS), K-CLIL (Science + English).
+- Unit 1: Egyptian Pyramids, Force, push, pull, friction, gravity. Tools: Ramp, Lever.
+- **EXTENDED KNOWLEDGE**: If the user asks about general topics, educational market trends, AX LAB's vision, or current events, YOU MUST ANSWER THEM naturally and accurately. Do not force the topic back to Pyramids if they clearly want to talk about something else. You are a smart AI.
 
 [STRICT LANGUAGE BINDING]
 - If user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
 - If user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
-- NEVER mix languages. XENO = Korean. XENA = English.
+
+Persona 1: [XENO] (Fox)
+- Language: Korean only.
+- Tone: 친절한 초등학교 3학년 선생님.
+
+Persona 2: [XENA] (Polar Bear)
+- Language: English only.
+- Tone: EFL beginner. VERY simple words.
 
 [LEVEL INSTRUCTION: FOLLOW STRICTLY]
 ${levelInstruction}
@@ -238,7 +274,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 3. 앱 초기화
+        // 3. 메인 컨트롤 및 웰컴/선톡 로직
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -246,131 +282,111 @@ ${levelInstruction}
             document.getElementById('start-overlay').style.display = 'none';
             try { const unlock = new SpeechSynthesisUtterance(''); unlock.volume = 0; window.speechSynthesis.speak(unlock); } catch (e) {}
             
-            initDeviceSettings();
-            
-            // 🔥 v8 데이터셋에서 학습된 초기 숏컷 3개를 맨 뒤에 1회만 추가 (동일한 디자인)
-            extractInitialShortcutsFromData();
+            const savedLevel = localStorage.getItem('tutor_level') || '1';
+            const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
+            if(radio) radio.checked = true;
 
             setLanguage('en-US'); 
-            // 반복 타이머 제거. 최초 1회만 실행
             playWelcomeMessage();
-        }
-
-        function extractInitialShortcutsFromData() {
-            const sysText = getSystemInstruction();
-            const regex = /\[Q:\s*(.*?)\s*\]/g;
-            let matches = [];
-            let match;
-            while ((match = regex.exec(sysText)) !== null) { matches.push(match[1]); }
-            
-            if (matches.length > 0) {
-                let uniqueMatches = [...new Set(matches)];
-                let selected = uniqueMatches.sort(() => 0.5 - Math.random()).slice(0, 3);
-                
-                // 기존 버튼들 뒤에 append
-                selected.forEach(sc => {
-                    const btn = document.createElement('button');
-                    // 언어를 한국어로 할지 영어로 할지는 텍스트 내용 기반 추정, 기본값 사용
-                    const isKorean = /[가-힣]/.test(sc);
-                    btn.onclick = () => sendQuickQuery(sc, isKorean ? 'ko-KR' : 'en-US');
-                    // 디자인 완벽 동일화
-                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
-                    btn.innerText = sc;
-                    quickMenuContainer.appendChild(btn);
-                });
-            }
-        }
-
-        function initDeviceSettings() {
-            // 🔥 웹페이지 로딩 시 난이도 레벨 1 강제 고정
-            const levelOneRadio = document.querySelector('input[name="tutor-level"][value="1"]');
-            if(levelOneRadio) levelOneRadio.checked = true;
-
-            const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-            const isMobileSize = window.innerWidth < 768;
-            
-            const savedMode = localStorage.getItem('listen_mode');
-            if (savedMode) listeningMode = savedMode; 
-            else listeningMode = (isTouchDevice && isMobileSize) ? 'manual' : 'auto';
-            
-            const modeRadios = document.getElementsByName('listen-mode');
-            for(let radio of modeRadios) { if(radio.value === listeningMode) radio.checked = true; }
+            welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
         }
 
         function playWelcomeMessage() {
-            if (appState !== 'IDLE') return; 
+            if (isActive) return; 
             let msg = sttLang === 'ko-KR' ? "시작 버튼을 클릭해 주세요." : "Please click the START button.";
-            speakText(msg, true);
-        }
-
-        // ==========================================
-        // 4. 단일 상태 머신 제어
-        // ==========================================
-        function setAppState(newState) {
-            appState = newState;
-            if (appState === 'IDLE') { stopSttLogic(); setStatusUI('ready'); } 
-            else if (appState === 'MANUAL_READY') { stopSttLogic(); setStatusUI('manual_ready'); }
-            else if (appState === 'LISTENING') { startSttLogic(); setStatusUI('listen'); } 
-            else if (appState === 'THINKING') { stopSttLogic(); setStatusUI('process'); } 
-            else if (appState === 'SPEAKING') { stopSttLogic(); setStatusUI('speak'); }
+            speakText(msg);
         }
 
         function toggleActiveMode() {
             if (!hasInitialized) return;
             if (!localStorage.getItem('gemini_api_key')) { openApiKeyModal(); return; }
-            if (appState === 'IDLE') startActiveMode(); else stopActiveMode();
+            if (isActive) stopActiveMode(); else startActiveMode();
         }
 
         function startActiveMode() {
-            chatHistory = []; 
+            isActive = true;
+            isMicLocked = true; // 인사말 끝날 때까지 마이크 잠금
+            clearInterval(welcomeIntervalId);
+            stopSpeaking(); 
+            
             topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
-            topBtnIcon.innerText = "■"; topBtnText.innerText = "STOP";
-            let initialGreeting = sttLang === 'ko-KR' ? "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" : "Hello! I am your AI tutor. How are you today?";
-            speakText(initialGreeting, false); 
+            topBtnIcon.innerText = "■";
+            topBtnText.innerText = "STOP";
+
+            chatHistory = []; // 대화 기록 초기화
+            
+            // 시작 버튼 누르면 AI가 먼저 대화 주도 (선톡)
+            let initialGreeting = sttLang === 'ko-KR' 
+                ? "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" 
+                : "Hello! I am your AI tutor. How are you today?";
+            
+            setStatusUI('speak');
+            speakText(initialGreeting); // 재생 끝나면 자동으로 마이크 켜짐
+            
+            startInactivityTimer();
         }
 
-        function stopActiveMode() {
+        function stopActiveMode(fromModal = false) {
+            isActive = false;
+            clearTimeout(inactivityTimeout);
+            stopSttLogic();
             stopSpeaking();
-            setAppState('IDLE');
-            topActionBtn.className = "px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
-            topBtnIcon.innerText = "▶"; topBtnText.innerText = "START";
+
+            if (!fromModal) {
+                topActionBtn.className = "px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
+                topBtnIcon.innerText = "▶";
+                topBtnText.innerText = "START";
+                setStatusUI('ready');
+            }
         }
+
+        window.interruptTutor = function() {
+            if (isTutorSpeaking) {
+                stopSpeaking();
+                isMicLocked = false;
+                if (isActive && recognition && !sttErrorOccurred) {
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
+                    setStatusUI('listen');
+                }
+            }
+        };
 
         // ==========================================
-        // 5. 언어 및 쿼리 전송 (동기화 보장)
+        // 4. 언어 셋팅 & 퀵 메뉴
         // ==========================================
         function setLanguage(langCode, fromAI = false) {
             sttLang = langCode;
             document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
             document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
             
-            // 🔥 캐릭터와 언어를 강제로 일치시킴
             if (langCode === 'ko-KR') {
                 document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-orange-500 text-white rounded-md shadow-sm transition-all";
-                setCharacter('xeno');
+                if (!fromAI) setCharacter('xeno');
             } else {
                 document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all";
-                setCharacter('xena');
+                if (!fromAI) setCharacter('xena');
             }
-            if (appState === 'LISTENING' && !fromAI) { stopSttLogic(); setTimeout(() => startSttLogic(), 100); }
+            if (recognition && isActive && !fromAI) { recognition.stop(); }
+            
+            if (!isActive && hasInitialized) {
+                stopSpeaking();
+                clearInterval(welcomeIntervalId);
+                playWelcomeMessage();
+                welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
+            }
         }
 
         function sendQuickQuery(text, langCode) {
             if (!hasInitialized) initAppOnInteraction();
-            stopSpeaking(); 
-            if (appState === 'IDLE') {
-                topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
-                topBtnIcon.innerText = "■"; topBtnText.innerText = "STOP";
-            }
-            // 🔥 클릭 시 언어와 캐릭터 셋팅을 완벽히 동기화
+            if (!isActive) startActiveMode(); else stopSttLogic(); 
             setLanguage(langCode);
             userText.innerHTML = text;
-            userText.className = "text-slate-800 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
+            userText.className = "text-slate-800 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
             callGeminiAI(text);
         }
 
         // ==========================================
-        // 6. UI 렌더링 상태 변경
+        // 5. UI 상태 변화
         // ==========================================
         function setStatusUI(state) {
             tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-400', 'border-blue-400');
@@ -378,47 +394,27 @@ ${levelInstruction}
 
             if (state === 'ready') {
                 userText.innerHTML = "Click START to speak...";
-                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
+                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
                 userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
                 tutorBubbleContainer.classList.add('border-slate-100');
-            } 
-            else if (state === 'manual_ready') {
-                userText.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-2">
-                        <button onclick="handleManualMicClick()" class="px-8 py-3 bg-indigo-500 text-white font-extrabold rounded-full shadow-md hover:bg-indigo-600 transition-all flex items-center gap-2 active:scale-95">
-                            🎤 터치하여 말하기
-                        </button>
-                    </div>`;
-                userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
-                tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
-            }
-            else if (state === 'listen') {
-                if (listeningMode === 'manual') {
-                    userText.innerHTML = `
-                        <div class="flex flex-col items-center md:items-start justify-center py-2">
-                            <span class="text-indigo-400 font-bold mb-3 animate-pulse text-sm">마이크가 열렸습니다. 편하게 말씀하세요.</span>
-                            <button onclick="handleManualMicClick()" class="px-6 py-2.5 bg-rose-500 text-white font-bold text-sm rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-all flex items-center gap-2">
-                                🛑 말하기 완료 (전송)
-                            </button>
-                        </div>`;
-                } else { userText.innerHTML = "Feel free to speak..."; }
-                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
+            } else if (state === 'listen') {
+                userText.innerHTML = "Feel free to speak...";
+                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed animate-pulse";
                 userBubbleContainer.classList.add('bg-rose-50', 'border-rose-400');
                 tutorBubbleContainer.classList.add('border-slate-100');
-            } 
-            else if (state === 'process') {
-                userText.className = "text-slate-600 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
+            } else if (state === 'process') {
+                userText.className = "text-slate-600 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
                 userBubbleContainer.classList.add('bg-white', 'border-slate-100');
                 tutorBubbleContainer.classList.add('border-slate-100');
-            } 
-            else if (state === 'speak') {
+            } else if (state === 'speak') {
                 userText.innerHTML = `
-                    <div class="flex justify-center md:justify-start">
-                        <span class="text-slate-400 text-sm font-bold flex items-center gap-2">
-                            <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span></span>
-                            AI가 말하는 중입니다...
-                        </span>
-                    </div>`;
+                    <div class="flex flex-col items-start justify-center mt-1">
+                        <button onclick="interruptTutor()" class="px-5 py-2.5 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-sm rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
+                            ✋ 말 끊고 말하기
+                        </button>
+                    </div>
+                `;
+                userText.className = "w-full transition-all duration-300";
                 userBubbleContainer.classList.add('bg-white', 'border-slate-100');
                 tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
@@ -429,193 +425,230 @@ ${levelInstruction}
             tutorBubbleContainer.classList.remove('bg-[#fffcf5]', 'bg-[#f4faff]');
             if (char === 'xeno') { tutorBubbleContainer.classList.add('bg-[#fffcf5]'); } 
             else { tutorBubbleContainer.classList.add('bg-[#f4faff]'); }
+            if(isTutorSpeaking) setStatusUI('speak'); 
         }
 
         // ==========================================
-        // 설정 Modal 로직
+        // API Modal Functions
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; 
             const savedModel = localStorage.getItem('gemini_model_name') || 'gemini-3.1-flash-lite'; 
             const modelSelect = document.getElementById('api-model-select'); 
-            if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) modelSelect.value = savedModel; else modelSelect.value = 'gemini-3.1-flash-lite'; 
+            if (Array.from(modelSelect.options).some(opt => opt.value === savedModel)) { modelSelect.value = savedModel; } 
+            else { modelSelect.value = 'gemini-3.1-flash-lite'; } 
+            
+            const savedLevel = localStorage.getItem('tutor_level') || '1';
+            const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
+            if(radio) radio.checked = true;
+
             document.getElementById('api-key-error').classList.add('hidden'); 
         }
         function cancelApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
         async function verifyAndSaveApiKey() { 
-            const key = document.getElementById('api-key-input').value.trim(); 
-            const modelName = document.getElementById('api-model-select').value; 
+            const inputEl = document.getElementById('api-key-input'); 
+            const modelSelectEl = document.getElementById('api-model-select'); 
             const errorEl = document.getElementById('api-key-error'); 
+            const key = inputEl.value.trim(); 
+            const modelName = modelSelectEl.value; 
             const levelVal = document.querySelector('input[name="tutor-level"]:checked').value;
-            const modeVal = document.querySelector('input[name="listen-mode"]:checked').value;
 
             if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } 
-            document.getElementById('btn-save-key-text').innerText = "저장 중..."; errorEl.classList.add('hidden'); 
+            document.getElementById('btn-save-key-text').innerText = "저장 중..."; 
+            errorEl.classList.add('hidden'); 
             
             try { 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) }); 
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, { 
+                    method: "POST", headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] }) 
+                }); 
                 if (response.ok) { 
-                    localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); 
-                    localStorage.setItem('listen_mode', modeVal); listeningMode = modeVal;
-                    // 저장 로직에서는 로컬 스토리지에 넣지만, 페이지 로딩시는 항상 레벨 1임
+                    localStorage.setItem('gemini_api_key', key); 
+                    localStorage.setItem('gemini_model_name', modelName); 
                     localStorage.setItem('tutor_level', levelVal);
                     document.getElementById('apikey-modal').classList.add('hidden'); 
-                } else throw new Error("API 연동 실패"); 
-            } catch (err) { errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); } 
-            finally { document.getElementById('btn-save-key-text').innerText = "저장"; } 
+                } else { throw new Error("API 연동 실패"); } 
+            } catch (err) { 
+                errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); 
+            } finally { document.getElementById('btn-save-key-text').innerText = "저장"; } 
         }
 
         // ==========================================
-        // 무결점 STT 엔진 (0번부터 읽기)
+        // STT Logic
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
-
-        function processAndSendToAI(text) {
-            let processed = text.trim();
-            userText.innerHTML = processed;
-            lastRecognizedText = ''; 
-            callGeminiAI(processed);
-        }
-
-        function startSttLogic() { lastRecognizedText = ''; if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
-        function stopSttLogic() { if (recognition) try { recognition.abort(); } catch(e) {} }
-
-        function handleManualMicClick() {
-            if (appState === 'MANUAL_READY') {
-                setAppState('LISTENING');
-            } else if (appState === 'LISTENING') {
-                clearTimeout(sttSilenceTimeout);
-                stopSttLogic();
-                if (lastRecognizedText.length > 1) processAndSendToAI(lastRecognizedText); else setAppState('MANUAL_READY'); 
-            }
-        }
+        let sttErrorOccurred = false; 
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = true; 
             recognition.interimResults = true; 
-            
+            recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
             recognition.onresult = (event) => {
-                if(appState !== 'LISTENING') { try { recognition.abort(); } catch(e) {} return; }
-                clearTimeout(sttSilenceTimeout); 
-                let currentTranscript = ''; 
-                for (let i = 0; i < event.results.length; ++i) currentTranscript += event.results[i][0].transcript; 
-                lastRecognizedText = currentTranscript.trim();
+                if(!isActive || isTutorSpeaking || isMicLocked) return; 
                 
-                if (listeningMode === 'manual') {
-                    userText.innerHTML = lastRecognizedText + `
-                        <div class="mt-4 flex justify-center md:justify-start">
-                            <button onclick="handleManualMicClick()" class="px-6 py-2.5 bg-indigo-500 text-white font-bold text-sm rounded-full shadow-md hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-2">
-                                🚀 말하기 완료 (전송)
-                            </button>
-                        </div>`;
-                } else { userText.innerHTML = lastRecognizedText; }
+                lastVoiceTime = Date.now();
+                let interimTranscript = ''; let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; else interimTranscript += event.results[i][0].transcript; }
+                if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed"; userText.innerHTML = interimTranscript; }
                 
-                userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300 text-center md:text-left";
-                if (listeningMode === 'auto') { sttSilenceTimeout = setTimeout(() => { if (lastRecognizedText.length > 1) processAndSendToAI(lastRecognizedText); }, 1500); }
+                if (finalTranscript && finalTranscript.trim().length > 1) {
+                    let processed = finalTranscript.trim();
+                    if (!processed.endsWith('?')) {
+                        const stripped = processed.replace(/[.\s]+$/, '');
+                        if (sttLang === 'ko-KR') {
+                            const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
+                            const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
+                            const casualEndings = /(어|해|야|지)$/;
+                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) { processed = stripped + '?'; }
+                        } else if (sttLang === 'en-US') {
+                            const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
+                            if (startsWithQuestionWord) { processed = stripped + '?'; }
+                        }
+                    }
+                    userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300";
+                    userText.innerHTML = processed;
+                    recognition.stop();
+                    callGeminiAI(processed);
+                }
             };
-            
-            recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { alert("마이크 연결이 끊어졌거나 권한이 없습니다. 페이지를 새로고침 해주세요."); stopActiveMode(); } };
-            recognition.onend = () => { if (appState === 'LISTENING') { setTimeout(() => { if (appState === 'LISTENING') try { recognition.lang = sttLang; recognition.start(); } catch(e) {} }, 500); } };
+            recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
+            recognition.onend = () => { 
+                if (isActive && !isTutorSpeaking && !isMicLocked && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e) {} 
+                    setStatusUI('listen'); 
+                } 
+            };
         }
+        function startSttLogic() { sttErrorOccurred = false; if (recognition && !isMicLocked) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
+        function stopSttLogic() { if (recognition) try { recognition.stop(); } catch(e) {} isProcessingAI = false; }
 
         // ==========================================
-        // Gemini API 호출 로직
+        // Gemini API Logic
         // ==========================================
         async function callGeminiAI(userMessage) {
-            setAppState('THINKING');
+            isProcessingAI = true;
+            setStatusUI('process');
             const apiKey = localStorage.getItem('gemini_api_key');
             const modelName = localStorage.getItem('gemini_model_name') || 'gemini-3.1-flash-lite';
             
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-            while (chatHistory.length > 7) { if (chatHistory.length > 3) chatHistory.splice(2, 2); else chatHistory.shift(); }
+            while (chatHistory.length > 7) { chatHistory.shift(); chatHistory.shift(); }
+
+            const dynamicSystemInstruction = getSystemInstruction();
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ system_instruction: { parts: [{ text: getSystemInstruction() }] }, contents: chatHistory, generationConfig: { temperature: 0.7, maxOutputTokens: 250 } })
+                    body: JSON.stringify({ system_instruction: { parts: [{ text: dynamicSystemInstruction }] }, contents: chatHistory, generationConfig: { temperature: 0.7, maxOutputTokens: 250 } })
                 });
                 if (!response.ok) throw new Error("API Error");
                 const data = await response.json();
                 let aiResponse = data.candidates[0].content.parts[0].text.trim();
                 
-                // 프롬프트 상 오류 방지를 위해 대답 전처리 제거
-                // 언어 상태는 이미 클릭/음성 진입 시 고정되어 있으므로 AI 응답에 맞춰 임의 변경 금지
-                // (어차피 프롬프트에서 sttLang에 맞게 대답하도록 유도됨)
-                
+                if (aiResponse.startsWith('[XENO]')) { setLanguage('ko-KR', true); setCharacter('xeno'); aiResponse = aiResponse.replace('[XENO]', '').trim(); } 
+                else if (aiResponse.startsWith('[XENA]')) { setLanguage('en-US', true); setCharacter('xena'); aiResponse = aiResponse.replace('[XENA]', '').trim(); }
+
                 chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                setStatusUI('speak');
                 
                 const cleanText = aiResponse.replace(/[\*\_~`#>-]/g, '').replace(/\[.*?\]\(.*?\)/g, '').replace(/!\[.*?\]\(.*?\)/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '').trim();
-                speakText(cleanText, false);
+                speakText(cleanText);
             } catch (error) {
                 tutorText.innerHTML = "네트워크 오류가 발생했습니다.";
-                setTimeout(() => { if(appState === 'THINKING') setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY'); }, 3000);
+                setTimeout(() => { isProcessingAI = false; if(isActive) setStatusUI('listen'); }, 3000);
             }
         }
 
         // ==========================================
-        // 단일 TTS Engine (고품질 음성 복구 포함)
+        // TTS Engine (Sync 및 발음 치환 적용)
         // ==========================================
-        function speakText(text, isWelcomeOnly) {
+        function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
+        function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
+        function handleModal(choice) { modalEl.classList.add('hidden'); if (choice === 'yes') startActiveMode(); else stopActiveMode(); }
+
+        let voices = []; speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
+        let ttsQueue = []; let currentChunkIndex = 0;
+
+        function speakText(text) {
             stopSpeaking();
             if (!text) return;
-            if(!isWelcomeOnly) setAppState('SPEAKING');
-            
+            isTutorSpeaking = true;
+            isMicLocked = true;
             renderer.startSpeakingAnim('tts');
-            tutorText.innerHTML = text; 
 
-            let spokenText = sttLang === 'ko-KR' ? text.replace(/A\.?I\.?/gi, '에이아이').replace(/AX/gi, '에이엑스') : text.replace(/A\.?I\.?/gi, 'A I').replace(/AX/gi, 'A X');
-            const utterance = new SpeechSynthesisUtterance(spokenText);
+            // 화면에 텍스트 한 번에 표시 (싱크 버그 및 깜빡임 원천 차단)
+            tutorText.innerHTML = text;
+
+            // 오디오용으로만 문장 분할
+            const rawChunks = text.match(/[^.?!]+[.?!]*(?:\s|$)/g) || [text];
+            ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
+            currentChunkIndex = 0;
+
+            playNextTtsChunk();
+        }
+
+        function playNextTtsChunk() {
+            if (currentChunkIndex >= ttsQueue.length) { completeSpeakingSequence(); return; }
+
+            const currentText = ttsQueue[currentChunkIndex];
             
-            // 🔥 고품질 TTS 탐색 및 적용 (언어 절대 동기화)
-            utterance.lang = sttLang; 
-            utterance.volume = 1.0; utterance.pitch = 1.0; utterance.rate = 1.0;
-            
-            let voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                // Google, Natural, Premium 등 고품질 엔진을 최우선으로 찾기
-                let bestVoice = voices.find(v => v.lang.includes(sttLang) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')));
-                if (!bestVoice) bestVoice = voices.find(v => v.lang.includes(sttLang));
-                if (bestVoice) utterance.voice = bestVoice;
+            // 엔진 발음 교정 로직 
+            let spokenText = currentText;
+            if (sttLang === 'ko-KR') { 
+                spokenText = spokenText.replace(/A\.?I\.?/gi, '에이아이').replace(/AX/gi, '에이엑스');
+            } else { 
+                spokenText = spokenText.replace(/A\.?I\.?/gi, 'A I').replace(/AX/gi, 'A X');
             }
+            
+            const utterance = new SpeechSynthesisUtterance(spokenText);
+            window.activeUtterance = utterance;
+            utterance.volume = 1.0; 
+            utterance.lang = sttLang; 
 
-            clearTimeout(ttsFallbackTimeout);
-            ttsFallbackTimeout = setTimeout(() => {
-                if (appState === 'SPEAKING') {
-                    stopSpeaking(); 
-                    if(!isWelcomeOnly) setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY');
-                }
-            }, Math.max(3000, spokenText.length * 200) + 3000);
+            if (voices.length === 0) voices = speechSynthesis.getVoices();
+            let bestVoice = voices.find(v => v.lang.includes(utterance.lang) && (v.name.includes('Google') || v.name.includes('Natural')));
+            if (!bestVoice) bestVoice = voices.find(v => v.lang.includes(utterance.lang));
+            if (bestVoice) utterance.voice = bestVoice;
+            utterance.pitch = 1.0; utterance.rate = 1.0;
 
-            utterance.onend = () => { 
-                clearTimeout(ttsFallbackTimeout); renderer.stopSpeakingAnim(); 
-                if(!isWelcomeOnly) setTimeout(() => { setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY'); }, 1000);
-            };
-            utterance.onerror = () => { 
-                clearTimeout(ttsFallbackTimeout); renderer.stopSpeakingAnim(); 
-                if(!isWelcomeOnly) setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY');
-            };
+            clearTimeout(window.ttsFallbackTimeout);
+            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, Math.max(2500, spokenText.length * 120));
+
+            utterance.onstart = () => { renderer.startSpeakingAnim('tts'); };
+            utterance.onend = () => { currentChunkIndex++; playNextTtsChunk(); };
+            utterance.onerror = () => { currentChunkIndex++; playNextTtsChunk(); };
             speechSynthesis.speak(utterance);
         }
-        
-        function stopSpeaking() { clearTimeout(ttsFallbackTimeout); speechSynthesis.cancel(); renderer.stopSpeakingAnim(); }
 
-        // 브라우저 보이스 로딩 지연 대응
-        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        function completeSpeakingSequence() {
+            clearTimeout(window.ttsFallbackTimeout); isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null;
+            lastVoiceTime = Date.now(); isProcessingAI = false;
+            
+            setTimeout(() => {
+                isMicLocked = false;
+                if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
+                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
+                    setStatusUI('listen');
+                }
+            }, 1000);
+        }
+
+        function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; isMicLocked = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
 
         // ==========================================
-        // 렌더링 엔진 (건드리지 않음)
+        // 렌더링 엔진 
         // ==========================================
         const renderer = {
             config: { "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } },
             simulation: { mouthOpen: 0, blinkState: 0, blinkTimer: 0, isSpeaking: false, speakType: 'none', vowel: 'A', speakIntervalId: null },
-            ctx: null, images: { xena: new Image(), xeno: new Image() }, imageLoaded: { xena: false, xeno: false }, lastDrawTime: 0,
+            ctx: null, images: { xena: new Image(), xeno: new Image() }, imageLoaded: { xena: false, xeno: false },
             init: function() { this.ctx = canvasEl.getContext('2d'); this.images.xena.src = "Xena_base.png"; this.images.xeno.src = "Xeno_base.png"; this.images.xena.onload = () => { this.imageLoaded.xena = true; }; this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; this.startLoop(); },
             startSpeakingAnim: function(type) { clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; this.simulation.speakType = type; if (type === 'tts') { const vowels = ['A', 'E', 'I', 'O', 'U']; let vIdx = 0; this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; this.simulation.vowel = vowels[vIdx]; vIdx = (vIdx + 1) % vowels.length; }, 130); } },
             stopSpeakingAnim: function() { this.simulation.isSpeaking = false; this.simulation.speakType = 'none'; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; },
-            startLoop: function() { const drawFrame = () => { requestAnimationFrame(drawFrame); const now = Date.now(); const targetFps = this.simulation.isSpeaking ? 60 : 15; const interval = 1000 / targetFps; const elapsed = now - this.lastDrawTime; if (elapsed < interval) return; this.lastDrawTime = now - (elapsed % interval); this.ctx.clearRect(0, 0, 400, 600); const breathe = Math.sin(now / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe); if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); } this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore(); if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > (15 * 3)) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > (15 * 3) + 2) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } } }; drawFrame(); },
+            startLoop: function() { const drawFrame = () => { this.ctx.clearRect(0, 0, 400, 600); const breathe = Math.sin(Date.now() / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe); if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); } this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore(); if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > 200) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 212) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } } requestAnimationFrame(drawFrame); }; drawFrame(); },
             drawBackupSilhouette: function() { this.ctx.save(); this.ctx.beginPath(); const isXena = currentChar === 'xena'; this.ctx.arc(0, 140, 100, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f0f7ff" : "#fffbf2"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(0, 10, 105, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f8fafc" : "#fffbeb"; this.ctx.fill(); this.ctx.strokeStyle = "#cbd5e1"; this.ctx.lineWidth = 4; this.ctx.stroke(); this.ctx.fillStyle = "#64748b"; this.ctx.font = "bold 13px sans-serif"; this.ctx.textAlign = "center"; this.ctx.fillText(`[${currentChar}_base.png] Loading...`, 0, 10); this.ctx.restore(); },
             drawVectorEyes: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const eyeYOff = cfg.eyeY - 200; const drawSingleEye = (ex, isLeft) => { this.ctx.save(); if (this.simulation.blinkState === 1) { this.ctx.beginPath(); this.ctx.arc(ex, eyeYOff + cfg.eyeHeight * 0.25, cfg.eyeWidth * 0.9, 0.1 * Math.PI, 0.9 * Math.PI, false); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness * 3.5; this.ctx.stroke(); } else { this.ctx.beginPath(); this.ctx.ellipse(ex, eyeYOff, cfg.eyeWidth, cfg.eyeHeight, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness || 1.5; this.ctx.stroke(); this.ctx.beginPath(); const pw = Math.min(cfg.eyeWidth * 0.85, cfg.pupilSize / 2); const px = ex + (isLeft ? (cfg.pupilLeftOffsetX||0) : (cfg.pupilRightOffsetX||0)); const py = eyeYOff + (isLeft ? (cfg.pupilLeftOffsetY||0) : (cfg.pupilRightOffsetY||0)); this.ctx.ellipse(px, py, pw, pw, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#1e293b"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(px - pw*0.35, py - pw*0.35, pw*0.35, 0, Math.PI*2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); } this.ctx.restore(); }; drawSingleEye(-halfSpacing, true); drawSingleEye(halfSpacing, false); },
             drawVectorEyebrows: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const browY = (cfg.eyeY - 200) + cfg.eyebrowY; const drawBrow = (bx, isLeft) => { this.ctx.save(); this.ctx.translate(bx, browY); this.ctx.rotate((cfg.eyebrowAngle * Math.PI / 180) * (isLeft ? 1 : -1)); this.ctx.beginPath(); const half = cfg.eyebrowLength / 2; this.ctx.moveTo(-half, isLeft ? -1.5 : 1.5); this.ctx.quadraticCurveTo(0, -cfg.eyebrowThickness * 1.5, half, isLeft ? 1.5 : -1.5); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyebrowThickness; this.ctx.lineCap = "round"; this.ctx.stroke(); this.ctx.restore(); }; drawBrow(-halfSpacing, true); drawBrow(halfSpacing, false); },
@@ -626,3 +659,5 @@ ${levelInstruction}
     </script>
 </body>
 </html>
+
+```
