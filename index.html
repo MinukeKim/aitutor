@@ -60,7 +60,6 @@
                 </label>
             </div>
 
-            <!-- 난이도 옵션 복구 (디폴트 Lv 1) -->
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎓 튜터 난이도 및 스타일</label>
             <div class="flex flex-col gap-2.5 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
@@ -142,19 +141,18 @@
                         </div>
                     </div>
                     
-                    <!-- 퀵 메뉴 (정적 메뉴 유지, 동적 숏컷은 여기에 Prepend 됨) -->
+                    <!-- 퀵 메뉴 (정적 버튼들) -->
                     <div id="quick-menu-container" class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
-                        <!-- 동적 숏컷이 여기에 맨 앞으로 삽입됩니다 -->
+                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
+                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
+                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
+                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
                         
-                        <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
-                        <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
-                        <button onclick="sendQuickQuery('What are the key expressions?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Key expressions?</button>
-                        <button onclick="sendQuickQuery('What is the date today?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Date today?</button>
-                        
-                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
-                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
-                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
-                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
+                        <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
+                        <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
+                        <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
+                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
+                        <!-- 동적으로 추출된 학습 데이터 숏컷 3개가 이 뒤에 1회 한정 추가됩니다 -->
                     </div>
                 </div>
 
@@ -164,7 +162,7 @@
 
     <script>
         // ==========================================
-        // 1. 단일 상태 머신 및 전역 변수
+        // 1. 전역 변수 및 상태 제어
         // ==========================================
         let appState = 'IDLE'; 
         let listeningMode = 'auto'; 
@@ -173,8 +171,8 @@
         let hasInitialized = false;
         let sttLang = 'en-US'; 
         let chatHistory = [];
-        let welcomeIntervalId = null;
         
+        // 안드로이드 중복 버그 방지용 변수
         let sttSilenceTimeout = null; 
         let lastRecognizedText = '';
         let ttsFallbackTimeout = null;
@@ -191,60 +189,48 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. 동적 시스템 프롬프트 (난이도 복구 및 v8 데이터셋)
+        // 2. 동적 시스템 프롬프트 (v8 마스터 데이터셋)
         // ==========================================
         function getSystemInstruction() {
-            // 난이도(레벨 1, 2) 동적 적용 로직 복구 완료
+            // 난이도 강제 제어 (초과 절대 금지)
             const levelEl = document.querySelector('input[name="tutor-level"]:checked');
             const level = levelEl ? levelEl.value : "1"; 
 
             let levelInstruction = "";
             if (level === "1") {
-                levelInstruction = "- Length: Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.";
+                levelInstruction = "- Length: STRICTLY Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.\n- RULE: UNDER NO CIRCUMSTANCES EXCEED 3 SENTENCES.";
             } else if (level === "2") {
-                levelInstruction = "- Length: Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.";
+                levelInstruction = "- Length: STRICTLY Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.\n- RULE: UNDER NO CIRCUMSTANCES EXCEED 5 SENTENCES.";
             }
 
             return `
-# AX LAB English: AI 튜터 파인튜닝 및 프롬프트 엔지니어링 마스터 데이터셋 v8 (Korean Edition)
+# AX LAB English: AI 튜터 파인튜닝 마스터 데이터셋 v8 (Korean Edition)
 
-이 지침서는 주식회사 제노이즈(XENOIS)의 초등 과학융합 영어 솔루션 **'AX 랩 잉글리시(AX LAB English)'**의 AI 튜터 엔진(언어 튜터 XENA & 과학 튜터 XENO)을 위한 최종 시스템 명령입니다.
+## 1. 에듀테크 소셜 벤처 정체성 및 교육 철학
+*   사교육 시장 정상화: 합리적인 가격으로 양질의 1:1 맞춤형 피드백 제공.
+*   무한 격려: "Super job!", "Almost there!" 등 긍정적 강화를 매 답변 시작 시 사용.
 
-## 1. 에듀테크 소셜 벤처 정체성 및 교육 철학 데이터
-*   **사교육 시장 정상화**: 학원의 60% 수준 가격으로 양질의 1:1 맞춤형 피드백을 제공합니다.
-*   **무한 격려**: "Super job!", "Almost there!" 등 풍부한 긍정적 강화를 매 답변 시작 시 사용합니다. 아동의 의도를 끝까지 들어주고 인정해 줍니다.
+## 2. K-CLIL 교수학습 전략
+*   SCEE 순환 모델: 공교육 지식 -> 영단어 변환 -> 실습 -> 디지털 산출물
 
-## 2. K-CLIL 교수학습 이론 및 실천 전략
-*   **SCEE 순환 학습 모델**: 한국 과학 공교육 지식(Subject) -> 영단어 변환(Convert) -> 교구 실습(Experience) -> 디지털 산출물(Express)
+## 3. AI 튜터 캐릭터 (절대 준수)
+*   [XENA]: 북극곰. 영어 전용 코치. 절대로 "틀렸다"고 하지 않고 올바른 문장 구조로 유도.
+*   [XENO]: 여우. 한국어 전용 과학 코치. 물리/과학 지식을 쉬운 비유로 설명.
 
-## 3. AI 튜터 캐릭터 및 코칭 지침
-*   **언어 AI 튜터 엑사(XENA)**: 흰색 털을 가진 북극곰. 영어 전용 코치. 절대로 "틀렸다"고 하지 않고 알맹이를 칭찬한 뒤 올바른 문장 구조(Target Pattern)로 유도.
-*   **과학 AI 튜터 제노(XENO)**: 탐험가 복장의 여우. 한국어 전용 과학 코치. 정확한 물리/과학 지식을 아주 쉬운 비유로 설명.
-*   **소크라테스식 발문법**: 일방적 지식 주입 금지. 질문을 던져 아동이 스스로 깨닫게 유도.
+## 4. 안전 및 윤리 가드레일 (Stern Guardian Mode)
+*   비속어 사용 시 단호하게 선을 긋고 정상적인 대화로 복귀 제안.
 
-## 4. 안전 및 윤리적 가드레일 (Stern Guardian Mode)
-*   아동이 비속어나 장난을 칠 경우, 극도로 이성적이고 단호하게 선을 긋고 정상적인 과학 탐험으로 복귀를 제안합니다.
-    > [Q: 피라미드 돌 옮기기] [Q: AX LAB 회사 비전]
-
-## 5. 동적 숏컷 텍스트 메뉴 자동 생성 지침 (중요)
-모바일 환경 사용자를 위해 **매 답변의 가장 마지막 줄에 대안용 '동적 숏컷 키워드 질문'을 2~3개 자동 생성**해야 합니다.
-*   **포맷**: 대괄호 안에 Q: 를 넣은 \`[Q: 짧은 키워드 질문]\` 형태.
-*   **길이 제약**: 15자 내외의 아주 짧고 간결한 형태 유지.
-*   **예시**: \`[Q: 경사로 작동원리]\`, \`[Q: 밀기와 당기기 차이]\`, \`[Q: 1차시 키워드 퀴즈]\`, \`[Q: 제노이즈 특허번호]\`
-*   반드시 독립적인 줄바꿈을 적용하여 본문과 철저하게 분리하십시오.
-
-## 6. 초등 3학년 1학기 1단원 교과 마스터 데이터셋 (G3-1 Unit 1)
-*   **단원 프롤로그**: Egypt, river, build, pyramid, move, stone. "How do they build big pyramids?"
-*   **1-1화**: force, pull, push, rope, ramp. "Force makes things move."
-*   **1-2화**: pushing, pulling. "They push big stones forward. They also pull heavy stones close."
-
-## 7. 동적 숏컷 기반 대화 시나리오 (예시 데이터)
-*   [Q: They use ropes] [Q: 1차시 단어퀴즈] [Q: AX LAB 특허일자]
-*   [Q: 무거울수록 큰 힘 필요] [Q: 상자밀기 실험방법]
+## 5. 학습 데이터 기반 Q&A 예시 (참고용)
+*   [Q: 이집트 흐르는 강?]
+*   [Q: 피라미드 지은 사람]
+*   [Q: 밀기와 당기기 차이]
+*   [Q: 제노이즈 특허번호]
+*   [Q: 상자밀기 교구실습]
 
 [STRICT LANGUAGE BINDING]
 - If user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
 - If user speaks English: ACT AS [XENA] (Polar Bear). Speak ONLY in English.
+- NEVER mix languages. XENO = Korean. XENA = English.
 
 [LEVEL INSTRUCTION: FOLLOW STRICTLY]
 ${levelInstruction}
@@ -252,7 +238,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 3. 앱 초기화 및 동적 숏컷 최초 세팅
+        // 3. 앱 초기화
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -262,12 +248,12 @@ ${levelInstruction}
             
             initDeviceSettings();
             
-            // 🔥 v8 데이터셋에서 학습된 초기 숏컷 추출하여 퀵 메뉴에 삽입
+            // 🔥 v8 데이터셋에서 학습된 초기 숏컷 3개를 맨 뒤에 1회만 추가 (동일한 디자인)
             extractInitialShortcutsFromData();
 
             setLanguage('en-US'); 
+            // 반복 타이머 제거. 최초 1회만 실행
             playWelcomeMessage();
-            welcomeIntervalId = setInterval(playWelcomeMessage, 30000);
         }
 
         function extractInitialShortcutsFromData() {
@@ -278,35 +264,28 @@ ${levelInstruction}
             while ((match = regex.exec(sysText)) !== null) { matches.push(match[1]); }
             
             if (matches.length > 0) {
-                // 중복 제거 후 랜덤하게 3개 추출
                 let uniqueMatches = [...new Set(matches)];
                 let selected = uniqueMatches.sort(() => 0.5 - Math.random()).slice(0, 3);
-                addDynamicShortcutsToMenu(selected, true);
+                
+                // 기존 버튼들 뒤에 append
+                selected.forEach(sc => {
+                    const btn = document.createElement('button');
+                    // 언어를 한국어로 할지 영어로 할지는 텍스트 내용 기반 추정, 기본값 사용
+                    const isKorean = /[가-힣]/.test(sc);
+                    btn.onclick = () => sendQuickQuery(sc, isKorean ? 'ko-KR' : 'en-US');
+                    // 디자인 완벽 동일화
+                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
+                    btn.innerText = sc;
+                    quickMenuContainer.appendChild(btn);
+                });
             }
         }
 
-        // 🌟 퀵 메뉴 컨테이너의 '맨 앞(Prepend)'에 동적 버튼 추가
-        function addDynamicShortcutsToMenu(shortcuts, isInit = false) {
-            if (!shortcuts || shortcuts.length === 0) return;
-            
-            // 배열을 뒤집어야 prepend 시 순서대로 배치됨
-            shortcuts.reverse().forEach(sc => {
-                const btn = document.createElement('button');
-                btn.onclick = () => sendQuickQuery(sc, sttLang);
-                
-                // 초기 로딩 숏컷(✨)과 대화 중 숏컷(🔥) 시각적 구분
-                if (isInit) {
-                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 text-purple-700 font-bold text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
-                    btn.innerText = `✨ ${sc}`;
-                } else {
-                    btn.className = "px-3 md:px-4 py-1.5 md:py-2 bg-rose-50 border border-rose-200 hover:border-rose-400 hover:bg-rose-100 text-rose-700 font-bold text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0";
-                    btn.innerText = `🔥 ${sc}`;
-                }
-                quickMenuContainer.prepend(btn);
-            });
-        }
-
         function initDeviceSettings() {
+            // 🔥 웹페이지 로딩 시 난이도 레벨 1 강제 고정
+            const levelOneRadio = document.querySelector('input[name="tutor-level"][value="1"]');
+            if(levelOneRadio) levelOneRadio.checked = true;
+
             const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
             const isMobileSize = window.innerWidth < 768;
             
@@ -316,10 +295,6 @@ ${levelInstruction}
             
             const modeRadios = document.getElementsByName('listen-mode');
             for(let radio of modeRadios) { if(radio.value === listeningMode) radio.checked = true; }
-            
-            const savedLevel = localStorage.getItem('tutor_level') || '1';
-            const levelRadio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
-            if(levelRadio) levelRadio.checked = true;
         }
 
         function playWelcomeMessage() {
@@ -347,7 +322,6 @@ ${levelInstruction}
         }
 
         function startActiveMode() {
-            clearInterval(welcomeIntervalId);
             chatHistory = []; 
             topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
             topBtnIcon.innerText = "■"; topBtnText.innerText = "STOP";
@@ -363,19 +337,20 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 5. 언어 & 동적 숏컷 쿼리 실행
+        // 5. 언어 및 쿼리 전송 (동기화 보장)
         // ==========================================
         function setLanguage(langCode, fromAI = false) {
             sttLang = langCode;
             document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
             document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-bold text-slate-400 rounded-md transition-all";
             
+            // 🔥 캐릭터와 언어를 강제로 일치시킴
             if (langCode === 'ko-KR') {
                 document.getElementById('lang-ko').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-orange-500 text-white rounded-md shadow-sm transition-all";
-                if (!fromAI) setCharacter('xeno');
+                setCharacter('xeno');
             } else {
                 document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all";
-                if (!fromAI) setCharacter('xena');
+                setCharacter('xena');
             }
             if (appState === 'LISTENING' && !fromAI) { stopSttLogic(); setTimeout(() => startSttLogic(), 100); }
         }
@@ -386,8 +361,8 @@ ${levelInstruction}
             if (appState === 'IDLE') {
                 topActionBtn.className = "px-4 py-2 md:py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
                 topBtnIcon.innerText = "■"; topBtnText.innerText = "STOP";
-                clearInterval(welcomeIntervalId);
             }
+            // 🔥 클릭 시 언어와 캐릭터 셋팅을 완벽히 동기화
             setLanguage(langCode);
             userText.innerHTML = text;
             userText.className = "text-slate-800 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
@@ -457,7 +432,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 설정 Modal 로직 (난이도 복원 반영)
+        // 설정 Modal 로직
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
@@ -483,6 +458,7 @@ ${levelInstruction}
                 if (response.ok) { 
                     localStorage.setItem('gemini_api_key', key); localStorage.setItem('gemini_model_name', modelName); 
                     localStorage.setItem('listen_mode', modeVal); listeningMode = modeVal;
+                    // 저장 로직에서는 로컬 스토리지에 넣지만, 페이지 로딩시는 항상 레벨 1임
                     localStorage.setItem('tutor_level', levelVal);
                     document.getElementById('apikey-modal').classList.add('hidden'); 
                 } else throw new Error("API 연동 실패"); 
@@ -546,7 +522,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // Gemini API & 동적 숏컷 파싱 로직
+        // Gemini API 호출 로직
         // ==========================================
         async function callGeminiAI(userMessage) {
             setAppState('THINKING');
@@ -565,23 +541,14 @@ ${levelInstruction}
                 const data = await response.json();
                 let aiResponse = data.candidates[0].content.parts[0].text.trim();
                 
-                if (aiResponse.startsWith('[XENO]')) { setLanguage('ko-KR', true); setCharacter('xeno'); aiResponse = aiResponse.replace('[XENO]', '').trim(); } 
-                else if (aiResponse.startsWith('[XENA]')) { setLanguage('en-US', true); setCharacter('xena'); aiResponse = aiResponse.replace('[XENA]', '').trim(); }
-
-                // 🌟 동적 숏컷 정규식 파싱 및 추출
-                const shortcutRegex = /\[Q:\s*(.*?)\s*\]/g;
-                let shortcuts = [];
-                let match;
-                while ((match = shortcutRegex.exec(aiResponse)) !== null) { shortcuts.push(match[1]); }
+                // 프롬프트 상 오류 방지를 위해 대답 전처리 제거
+                // 언어 상태는 이미 클릭/음성 진입 시 고정되어 있으므로 AI 응답에 맞춰 임의 변경 금지
+                // (어차피 프롬프트에서 sttLang에 맞게 대답하도록 유도됨)
                 
-                // 🌟 숏컷을 제거한 순수 텍스트만 히스토리 및 화면/TTS로 전달
-                let cleanResponseText = aiResponse.replace(shortcutRegex, '').trim();
-                chatHistory.push({ role: "model", parts: [{ text: cleanResponseText }] });
+                chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
                 
-                // 🌟 파싱된 AI의 실시간 숏컷을 기존 퀵 메뉴 맨 앞에 추가
-                addDynamicShortcutsToMenu(shortcuts, false);
-                
-                speakText(cleanResponseText, false);
+                const cleanText = aiResponse.replace(/[\*\_~`#>-]/g, '').replace(/\[.*?\]\(.*?\)/g, '').replace(/!\[.*?\]\(.*?\)/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '').trim();
+                speakText(cleanText, false);
             } catch (error) {
                 tutorText.innerHTML = "네트워크 오류가 발생했습니다.";
                 setTimeout(() => { if(appState === 'THINKING') setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY'); }, 3000);
@@ -589,7 +556,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 단일 TTS Engine (15초 Fallback 방어 유지)
+        // 단일 TTS Engine (고품질 음성 복구 포함)
         // ==========================================
         function speakText(text, isWelcomeOnly) {
             stopSpeaking();
@@ -597,13 +564,23 @@ ${levelInstruction}
             if(!isWelcomeOnly) setAppState('SPEAKING');
             
             renderer.startSpeakingAnim('tts');
-            tutorText.innerHTML = text; // 본문 텍스트 화면 갱신
+            tutorText.innerHTML = text; 
 
             let spokenText = sttLang === 'ko-KR' ? text.replace(/A\.?I\.?/gi, '에이아이').replace(/AX/gi, '에이엑스') : text.replace(/A\.?I\.?/gi, 'A I').replace(/AX/gi, 'A X');
             const utterance = new SpeechSynthesisUtterance(spokenText);
-            utterance.volume = 1.0; utterance.lang = sttLang; utterance.pitch = 1.0; utterance.rate = 1.0;
+            
+            // 🔥 고품질 TTS 탐색 및 적용 (언어 절대 동기화)
+            utterance.lang = sttLang; 
+            utterance.volume = 1.0; utterance.pitch = 1.0; utterance.rate = 1.0;
+            
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Google, Natural, Premium 등 고품질 엔진을 최우선으로 찾기
+                let bestVoice = voices.find(v => v.lang.includes(sttLang) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')));
+                if (!bestVoice) bestVoice = voices.find(v => v.lang.includes(sttLang));
+                if (bestVoice) utterance.voice = bestVoice;
+            }
 
-            // 방어선: 글자당 200ms 계산 Fallback 타이머
             clearTimeout(ttsFallbackTimeout);
             ttsFallbackTimeout = setTimeout(() => {
                 if (appState === 'SPEAKING') {
@@ -622,7 +599,11 @@ ${levelInstruction}
             };
             speechSynthesis.speak(utterance);
         }
+        
         function stopSpeaking() { clearTimeout(ttsFallbackTimeout); speechSynthesis.cancel(); renderer.stopSpeakingAnim(); }
+
+        // 브라우저 보이스 로딩 지연 대응
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 
         // ==========================================
         // 렌더링 엔진 (건드리지 않음)
