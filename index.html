@@ -172,6 +172,10 @@
         let sttLang = 'en-US'; 
         let chatHistory = [];
         let welcomeIntervalId = null;
+        
+        let sttSilenceTimeout = null; 
+        let accumulatedTranscript = ''; 
+        let lastRecognizedText = ''; // 전송 직전 텍스트 임시 저장소
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const userBubbleContainer = document.getElementById('user-bubble-container');
@@ -241,11 +245,9 @@ ${levelInstruction}
         }
 
         function initDeviceSettings() {
-            // 디바이스 판별 (터치 가능 여부 + 화면 크기)
             const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
             const isMobileSize = window.innerWidth < 768;
 
-            // 저장된 설정 우선, 없으면 디바이스 기반 기본값 세팅
             const savedMode = localStorage.getItem('listen_mode');
             if (savedMode) {
                 listeningMode = savedMode;
@@ -253,13 +255,11 @@ ${levelInstruction}
                 listeningMode = (isTouchDevice && isMobileSize) ? 'manual' : 'auto';
             }
 
-            // 라디오 버튼 UI 업데이트
             const modeRadios = document.getElementsByName('listen-mode');
             for(let radio of modeRadios) {
                 if(radio.value === listeningMode) radio.checked = true;
             }
 
-            // 난이도 UI 업데이트
             const savedLevel = localStorage.getItem('tutor_level') || '1';
             const levelRadio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
             if(levelRadio) levelRadio.checked = true;
@@ -294,7 +294,7 @@ ${levelInstruction}
                 setStatusUI('process');
             } 
             else if (appState === 'SPEAKING') {
-                stopSttLogic(); // 말할 때 마이크 원천 차단
+                stopSttLogic(); // 발화 중 마이크 원천 차단
                 setStatusUI('speak');
             }
         }
@@ -322,7 +322,6 @@ ${levelInstruction}
                 ? "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" 
                 : "Hello! I am your AI tutor. How are you today?";
             
-            // 선톡 발화 후 모드에 맞춰 자동으로 다음 상태 진입
             speakText(initialGreeting, false); 
         }
 
@@ -333,15 +332,6 @@ ${levelInstruction}
             topActionBtn.className = "px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5";
             topBtnIcon.innerText = "▶";
             topBtnText.innerText = "START";
-        }
-
-        // 수동 모드 전용 (PTT)
-        function handleManualMicClick() {
-            if (appState === 'MANUAL_READY') {
-                setAppState('LISTENING');
-            } else if (appState === 'LISTENING') {
-                setAppState('MANUAL_READY');
-            }
         }
 
         // ==========================================
@@ -406,8 +396,19 @@ ${levelInstruction}
                 tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
             else if (state === 'listen') {
-                userText.innerHTML = "Feel free to speak...";
-                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed animate-pulse text-center md:text-left";
+                if (listeningMode === 'manual') {
+                    userText.innerHTML = `
+                        <div class="flex flex-col items-center md:items-start justify-center py-2">
+                            <span class="text-indigo-400 font-bold mb-3 animate-pulse text-sm">마이크가 열렸습니다. 편하게 말씀하세요.</span>
+                            <button onclick="handleManualMicClick()" class="px-6 py-2.5 bg-rose-500 text-white font-bold text-sm rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-all flex items-center gap-2">
+                                🛑 말하기 완료 (전송)
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    userText.innerHTML = "Feel free to speak...";
+                }
+                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left";
                 userBubbleContainer.classList.add('bg-rose-50', 'border-rose-400');
                 tutorBubbleContainer.classList.add('border-slate-100');
             } 
@@ -417,7 +418,6 @@ ${levelInstruction}
                 tutorBubbleContainer.classList.add('border-slate-100');
             } 
             else if (state === 'speak') {
-                // 말끊기 제거, AI 발화 안내만 남김
                 userText.innerHTML = `
                     <div class="flex justify-center md:justify-start">
                         <span class="text-slate-400 text-sm font-bold flex items-center gap-2">
@@ -439,7 +439,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // API Modal Functions (원본 유지 및 듣기모드 추가)
+        // API Modal Functions
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
@@ -485,10 +485,58 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // STT Logic (안정성 강화)
+        // STT Logic & Accumulation (끊김 방지)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
+
+        function processAndSendToAI(text) {
+            let processed = text.trim();
+            if (!processed.endsWith('?')) {
+                const stripped = processed.replace(/[.\s]+$/, '');
+                if (sttLang === 'ko-KR') {
+                    const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
+                    const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
+                    const casualEndings = /(어|해|야|지)$/;
+                    if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) { processed = stripped + '?'; }
+                } else if (sttLang === 'en-US') {
+                    const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
+                    if (startsWithQuestionWord) { processed = stripped + '?'; }
+                }
+            }
+            userText.innerHTML = processed;
+            
+            // 전송 후 변수 초기화
+            accumulatedTranscript = ''; 
+            lastRecognizedText = '';
+            
+            callGeminiAI(processed);
+        }
+
+        function startSttLogic() { 
+            accumulatedTranscript = ''; 
+            lastRecognizedText = '';
+            if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } 
+        }
+        function stopSttLogic() { 
+            if (recognition) try { recognition.abort(); } catch(e) {} 
+        }
+
+        function handleManualMicClick() {
+            if (appState === 'MANUAL_READY') {
+                setAppState('LISTENING');
+            } else if (appState === 'LISTENING') {
+                clearTimeout(sttSilenceTimeout);
+                stopSttLogic();
+                
+                // 전송 버튼을 누르는 순간 마지막으로 인식된 텍스트 전송
+                if (lastRecognizedText.trim().length > 1) {
+                    processAndSendToAI(lastRecognizedText);
+                } else {
+                    setAppState('MANUAL_READY'); 
+                }
+            }
+        }
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -496,38 +544,50 @@ ${levelInstruction}
             recognition.interimResults = true; 
             
             recognition.onresult = (event) => {
-                // 상태가 LISTENING이 아니면 무조건 폭파 (하울링 원천 방지)
                 if(appState !== 'LISTENING') {
                     try { recognition.abort(); } catch(e) {}
                     return; 
                 }
                 
-                let interimTranscript = ''; let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; else interimTranscript += event.results[i][0].transcript; }
-                if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed text-center md:text-left"; userText.innerHTML = interimTranscript; }
+                clearTimeout(sttSilenceTimeout); 
                 
-                if (finalTranscript && finalTranscript.trim().length > 1) {
-                    let processed = finalTranscript.trim();
-                    if (!processed.endsWith('?')) {
-                        const stripped = processed.replace(/[.\s]+$/, '');
-                        if (sttLang === 'ko-KR') {
-                            const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
-                            const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
-                            const casualEndings = /(어|해|야|지)$/;
-                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) { processed = stripped + '?'; }
-                        } else if (sttLang === 'en-US') {
-                            const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
-                            if (startsWithQuestionWord) { processed = stripped + '?'; }
+                let interimTranscript = ''; 
+                let finalChunk = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; ++i) { 
+                    if (event.results[i].isFinal) finalChunk += event.results[i][0].transcript; 
+                    else interimTranscript += event.results[i][0].transcript; 
+                }
+                
+                if (finalChunk) accumulatedTranscript += ' ' + finalChunk.trim();
+                
+                // 현재까지 조합된 텍스트
+                lastRecognizedText = (accumulatedTranscript + ' ' + interimTranscript).trim();
+                
+                if (listeningMode === 'manual') {
+                    userText.innerHTML = lastRecognizedText + `
+                        <div class="mt-4 flex justify-center md:justify-start">
+                            <button onclick="handleManualMicClick()" class="px-6 py-2.5 bg-indigo-500 text-white font-bold text-sm rounded-full shadow-md hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-2">
+                                🚀 말하기 완료 (전송)
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    userText.innerHTML = lastRecognizedText;
+                }
+                
+                userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300 text-center md:text-left";
+                
+                // 자동 모드: 1.5초 침묵 시 자동 전송
+                if (listeningMode === 'auto') {
+                    sttSilenceTimeout = setTimeout(() => {
+                        if (lastRecognizedText.trim().length > 1) {
+                            processAndSendToAI(lastRecognizedText);
                         }
-                    }
-                    userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300 text-center md:text-left";
-                    userText.innerHTML = processed;
-                    
-                    callGeminiAI(processed);
+                    }, 1500); 
                 }
             };
             
-            // 안정성 방어 코드: 에러 시 새로고침 권고
             recognition.onerror = (event) => { 
                 if (event.error === 'not-allowed' || event.error === 'network') { 
                     alert("마이크 연결이 끊어졌거나 권한이 없습니다. 안정적인 사용을 위해 페이지를 새로고침 해주세요."); 
@@ -535,7 +595,6 @@ ${levelInstruction}
                 } 
             };
             
-            // 안정성 방어 코드: 재시작 시 Debounce 처리
             recognition.onend = () => { 
                 if (appState === 'LISTENING') { 
                     setTimeout(() => {
@@ -546,8 +605,6 @@ ${levelInstruction}
                 } 
             };
         }
-        function startSttLogic() { if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
-        function stopSttLogic() { if (recognition) try { recognition.abort(); } catch(e) {} }
 
         // ==========================================
         // Gemini API Logic & Context Sliding Window
@@ -559,7 +616,7 @@ ${levelInstruction}
             
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             
-            // 컨텍스트 유지 보완: 7개 초과 시 첫번째 턴(index 0,1)은 남기고 중간(index 2,3)을 자름
+            // 대화 히스토리 슬라이딩 윈도우 (최초 시스템 컨텍스트 보존)
             while (chatHistory.length > 7) { 
                 if (chatHistory.length > 3) {
                     chatHistory.splice(2, 2); 
@@ -597,7 +654,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 단일 TTS Engine (Chunk 제거)
+        // 단일 TTS Engine
         // ==========================================
         function speakText(text, isWelcomeOnly) {
             stopSpeaking();
@@ -640,13 +697,13 @@ ${levelInstruction}
         function stopSpeaking() { speechSynthesis.cancel(); renderer.stopSpeakingAnim(); }
 
         // ==========================================
-        // 렌더링 엔진 (FPS 최적화 적용)
+        // 렌더링 엔진 (FPS 최적화)
         // ==========================================
         const renderer = {
             config: { "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } },
             simulation: { mouthOpen: 0, blinkState: 0, blinkTimer: 0, isSpeaking: false, speakType: 'none', vowel: 'A', speakIntervalId: null },
             ctx: null, images: { xena: new Image(), xeno: new Image() }, imageLoaded: { xena: false, xeno: false },
-            lastDrawTime: 0, // 프레임 제어용
+            lastDrawTime: 0,
             init: function() { this.ctx = canvasEl.getContext('2d'); this.images.xena.src = "Xena_base.png"; this.images.xeno.src = "Xeno_base.png"; this.images.xena.onload = () => { this.imageLoaded.xena = true; }; this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; this.startLoop(); },
             startSpeakingAnim: function(type) { clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; this.simulation.speakType = type; if (type === 'tts') { const vowels = ['A', 'E', 'I', 'O', 'U']; let vIdx = 0; this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; this.simulation.vowel = vowels[vIdx]; vIdx = (vIdx + 1) % vowels.length; }, 130); } },
             stopSpeakingAnim: function() { this.simulation.isSpeaking = false; this.simulation.speakType = 'none'; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; },
@@ -654,7 +711,6 @@ ${levelInstruction}
                 const drawFrame = () => { 
                     requestAnimationFrame(drawFrame); 
                     
-                    // FPS 스로틀링: 말할 땐 60fps, 아닐 땐 15fps
                     const now = Date.now();
                     const targetFps = this.simulation.isSpeaking ? 60 : 15;
                     const interval = 1000 / targetFps;
