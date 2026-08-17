@@ -173,9 +173,14 @@
         let chatHistory = [];
         let welcomeIntervalId = null;
         
+        // 연속 말하기 및 짧은 끊김 방지용 변수
         let sttSilenceTimeout = null; 
         let accumulatedTranscript = ''; 
-        let lastRecognizedText = ''; // 전송 직전 텍스트 임시 저장소
+        let lastRecognizedText = '';
+
+        // 15초 버그 꼼수 타이머
+        let ttsFallbackTimeout = null;
+        let ttsKeepAliveInterval = null;
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const userBubbleContainer = document.getElementById('user-bubble-container');
@@ -506,7 +511,6 @@ ${levelInstruction}
             }
             userText.innerHTML = processed;
             
-            // 전송 후 변수 초기화
             accumulatedTranscript = ''; 
             lastRecognizedText = '';
             
@@ -529,7 +533,6 @@ ${levelInstruction}
                 clearTimeout(sttSilenceTimeout);
                 stopSttLogic();
                 
-                // 전송 버튼을 누르는 순간 마지막으로 인식된 텍스트 전송
                 if (lastRecognizedText.trim().length > 1) {
                     processAndSendToAI(lastRecognizedText);
                 } else {
@@ -561,7 +564,6 @@ ${levelInstruction}
                 
                 if (finalChunk) accumulatedTranscript += ' ' + finalChunk.trim();
                 
-                // 현재까지 조합된 텍스트
                 lastRecognizedText = (accumulatedTranscript + ' ' + interimTranscript).trim();
                 
                 if (listeningMode === 'manual') {
@@ -578,7 +580,6 @@ ${levelInstruction}
                 
                 userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300 text-center md:text-left";
                 
-                // 자동 모드: 1.5초 침묵 시 자동 전송
                 if (listeningMode === 'auto') {
                     sttSilenceTimeout = setTimeout(() => {
                         if (lastRecognizedText.trim().length > 1) {
@@ -616,7 +617,6 @@ ${levelInstruction}
             
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             
-            // 대화 히스토리 슬라이딩 윈도우 (최초 시스템 컨텍스트 보존)
             while (chatHistory.length > 7) { 
                 if (chatHistory.length > 3) {
                     chatHistory.splice(2, 2); 
@@ -654,7 +654,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 단일 TTS Engine
+        // 단일 TTS Engine (15초 버그 방어 로직 적용)
         // ==========================================
         function speakText(text, isWelcomeOnly) {
             stopSpeaking();
@@ -676,7 +676,32 @@ ${levelInstruction}
             utterance.lang = sttLang; 
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
+            // 방어 1: 15초 버그 우회용 Keep-Alive (10초마다 pause/resume)
+            clearInterval(ttsKeepAliveInterval);
+            ttsKeepAliveInterval = setInterval(() => {
+                if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                    speechSynthesis.pause();
+                    speechSynthesis.resume();
+                } else if (!speechSynthesis.speaking) {
+                    clearInterval(ttsKeepAliveInterval);
+                }
+            }, 10000);
+
+            // 방어 2: 무한 대기 방지 Fallback (글자당 200ms + 여유시간)
+            clearTimeout(ttsFallbackTimeout);
+            const estimatedTime = Math.max(3000, spokenText.length * 200) + 3000;
+            ttsFallbackTimeout = setTimeout(() => {
+                if (appState === 'SPEAKING') {
+                    stopSpeaking(); 
+                    if(!isWelcomeOnly) {
+                        setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY');
+                    }
+                }
+            }, estimatedTime);
+
             utterance.onend = () => { 
+                clearTimeout(ttsFallbackTimeout);
+                clearInterval(ttsKeepAliveInterval);
                 renderer.stopSpeakingAnim(); 
                 if(!isWelcomeOnly) {
                     setTimeout(() => {
@@ -684,7 +709,10 @@ ${levelInstruction}
                     }, 1000);
                 }
             };
+            
             utterance.onerror = () => { 
+                clearTimeout(ttsFallbackTimeout);
+                clearInterval(ttsKeepAliveInterval);
                 renderer.stopSpeakingAnim(); 
                 if(!isWelcomeOnly) {
                     setAppState(listeningMode === 'auto' ? 'LISTENING' : 'MANUAL_READY');
@@ -694,7 +722,12 @@ ${levelInstruction}
             speechSynthesis.speak(utterance);
         }
 
-        function stopSpeaking() { speechSynthesis.cancel(); renderer.stopSpeakingAnim(); }
+        function stopSpeaking() { 
+            clearTimeout(ttsFallbackTimeout);
+            clearInterval(ttsKeepAliveInterval);
+            speechSynthesis.cancel(); 
+            renderer.stopSpeakingAnim(); 
+        }
 
         // ==========================================
         // 렌더링 엔진 (FPS 최적화)
