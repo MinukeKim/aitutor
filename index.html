@@ -9,10 +9,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; background-color: #ffffff; color: #334155; }
         
-        /* 캔버스 사이즈 최적화 */
         .canvas-responsive { width: 100%; max-width: 320px; height: auto; aspect-ratio: 2 / 3; }
         
-        /* 모바일 반응형 레이아웃 */
         @media (max-width: 768px) {
             .canvas-responsive { max-width: 160px; }
             body { padding: 0.75rem !important; }
@@ -20,7 +18,6 @@
             .quick-menu-scroll { max-height: 120px !important; }
         }
         
-        /* 커스텀 스크롤바 */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .quick-menu-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -47,7 +44,7 @@
         </div>
     </div>
 
-    <!-- 3. 설정 모달 (API & 튜터 레벨) -->
+    <!-- 3. 설정 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">설정 (Settings)</h3>
@@ -65,7 +62,6 @@
                 <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (고급 추론)</option>
             </select>
 
-            <!-- 튜터 레벨 설정 옵션 (레벨 3 삭제, 레벨 1 기본값) -->
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-4">🎓 튜터 난이도 및 스타일</label>
             <div class="flex flex-col gap-2.5 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label class="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
@@ -120,7 +116,7 @@
             </div>
         </div>
 
-        <!-- 2단 레이아웃 (세로 중앙 정렬) -->
+        <!-- 2단 레이아웃 -->
         <div class="flex flex-col md:flex-row gap-4 md:gap-8 flex-1 items-center justify-center mt-2">
             
             <!-- 렌더링 영역 -->
@@ -148,7 +144,7 @@
                         </div>
                     </div>
                     
-                    <!-- 퀵 메뉴 (스크롤 허용) -->
+                    <!-- 퀵 메뉴 -->
                     <div class="flex flex-wrap gap-2 mt-4 px-1 pb-2 max-h-[150px] overflow-y-auto quick-menu-scroll content-start">
                         <button onclick="sendQuickQuery('Who is Xena?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">Who is Xena?</button>
                         <button onclick="sendQuickQuery('What is CLIL?', 'en-US')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">What is CLIL?</button>
@@ -158,7 +154,7 @@
                         <button onclick="sendQuickQuery('제노를 소개해요!', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">제노 소개</button>
                         <button onclick="sendQuickQuery('AX LAB 잉글리시란?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">AX LAB 이란?</button>
                         <button onclick="sendQuickQuery('피라미드 실험 방법을 알려줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">실험 방법</button>
-                        <button onclick="sendQuickQuery('오늘 학습 주제를 요약해 줘.', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">학습 주제 요약</button>
+                        <button onclick="sendQuickQuery('교육 시장의 미래는 어때?', 'ko-KR')" class="px-3 md:px-4 py-1.5 md:py-2 bg-white border border-slate-200 hover:border-orange-400 hover:bg-orange-50 text-slate-600 font-medium text-xs md:text-sm rounded-full transition-all shadow-sm shrink-0">교육 시장 동향</button>
                     </div>
                 </div>
 
@@ -173,6 +169,7 @@
         let isActive = false;   
         let currentChar = 'xena'; 
         let isTutorSpeaking = false;
+        let isMicLocked = false; // 에코 방지 하드 락 변수
         let hasInitialized = false;
         let sttLang = 'en-US'; 
         
@@ -200,31 +197,28 @@
         const canvasEl = document.getElementById('tutorCanvas');
 
         // ==========================================
-        // 2. 동적 시스템 프롬프트 (레벨 1, 2)
+        // 2. 동적 시스템 프롬프트
         // ==========================================
         function getSystemInstruction() {
             const levelEl = document.querySelector('input[name="tutor-level"]:checked');
-            const level = levelEl ? levelEl.value : "1"; // Default Level 1
+            const level = levelEl ? levelEl.value : "1"; 
 
             let levelInstruction = "";
             if (level === "1") {
-                levelInstruction = "- Length Limit: Max 3 short sentences.\n- Extension: Core answer only. DO NOT add extra knowledge unless the user specifically asks for it. Keep it very brief.";
+                levelInstruction = "- Length: Max 3 short sentences.\n- Extension: Answer directly and briefly. DO NOT add extra knowledge unless explicitly asked.";
             } else if (level === "2") {
-                levelInstruction = "- Length Limit: Max 5 short sentences.\n- Extension: Give the core answer, and gracefully end with a related question to invite the user to learn more.";
+                levelInstruction = "- Length: Max 5 short sentences.\n- Extension: Give the answer, and end with a related question to invite conversation.";
             }
 
             return `
 You are the 'AX LAB Tutor'. 
 Today's Date: August 17, 2026.
 
-[KNOWLEDGE BASE: MUST PRIORITIZE THIS CURRICULUM]
-- Target: 3rd Grade (9-10 years old). Keep vocabulary EASY (Elementary/Middle school level maximum).
+[KNOWLEDGE BASE & EXTENSION ALLOWED]
+- Target: 3rd Grade (9-10 years old). Keep vocabulary EASY.
 - Program: AX LAB English (XENOIS), K-CLIL (Science + English).
-- Current Lesson: Unit 1 - Egyptian Pyramids.
-- Core Science: Force, push, pull, friction, gravity.
-- Core Tools: Ramp (slide), Lever (stick), Balance scale.
-- Story: Ancient Egyptians building Pyramids.
-- Experiment: Moving heavy stones using ramps and rolling logs (reducing friction).
+- Unit 1: Egyptian Pyramids, Force, push, pull, friction, gravity. Tools: Ramp, Lever.
+- **EXTENDED KNOWLEDGE**: If the user asks about general topics, educational market trends, AX LAB's vision, or current events, YOU MUST ANSWER THEM naturally and accurately. Do not force the topic back to Pyramids if they clearly want to talk about something else. You are a smart AI.
 
 [STRICT LANGUAGE BINDING]
 - If user speaks Korean: ACT AS [XENO] (Fox). Speak ONLY in Korean.
@@ -232,13 +226,11 @@ Today's Date: August 17, 2026.
 
 Persona 1: [XENO] (Fox)
 - Language: Korean only.
-- Tone: 친절하고 명확한 초등학교 3학년 수준. 어려운 전문 용어는 쉽게 비유해서 설명.
-- Output Tag: [XENO]
+- Tone: 친절한 초등학교 3학년 선생님.
 
 Persona 2: [XENA] (Polar Bear)
 - Language: English only.
-- Tone: EFL beginner. VERY simple, basic words. Easy grammar.
-- Output Tag: [XENA]
+- Tone: EFL beginner. VERY simple words.
 
 [LEVEL INSTRUCTION: FOLLOW STRICTLY]
 ${levelInstruction}
@@ -254,7 +246,6 @@ ${levelInstruction}
             document.getElementById('start-overlay').style.display = 'none';
             try { const unlock = new SpeechSynthesisUtterance(''); unlock.volume = 0; window.speechSynthesis.speak(unlock); } catch (e) {}
             
-            // 저장된 레벨 불러오기 (기본 1)
             const savedLevel = localStorage.getItem('tutor_level') || '1';
             const radio = document.querySelector(`input[name="tutor-level"][value="${savedLevel}"]`);
             if(radio) radio.checked = true;
@@ -283,6 +274,7 @@ ${levelInstruction}
 
         function startActiveMode() {
             isActive = true;
+            isMicLocked = false;
             clearInterval(welcomeIntervalId);
             stopSpeaking(); 
             
@@ -312,6 +304,7 @@ ${levelInstruction}
         window.interruptTutor = function() {
             if (isTutorSpeaking) {
                 stopSpeaking();
+                isMicLocked = false;
                 if (isActive && recognition && !sttErrorOccurred) {
                     try { recognition.lang = sttLang; recognition.start(); } catch(e){}
                     setStatusUI('listen');
@@ -397,7 +390,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // API Modal & Settings 
+        // API Modal Functions
         // ==========================================
         function openApiKeyModal() { 
             document.getElementById('apikey-modal').classList.remove('hidden'); 
@@ -413,20 +406,16 @@ ${levelInstruction}
 
             document.getElementById('api-key-error').classList.add('hidden'); 
         }
-        
         function cancelApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
-        
         async function verifyAndSaveApiKey() { 
             const inputEl = document.getElementById('api-key-input'); 
             const modelSelectEl = document.getElementById('api-model-select'); 
             const errorEl = document.getElementById('api-key-error'); 
             const key = inputEl.value.trim(); 
             const modelName = modelSelectEl.value; 
-            
             const levelVal = document.querySelector('input[name="tutor-level"]:checked').value;
 
             if (!key) { errorEl.innerText = "❌ API 키를 입력해주세요."; errorEl.classList.remove('hidden'); return; } 
-            
             document.getElementById('btn-save-key-text').innerText = "저장 중..."; 
             errorEl.classList.add('hidden'); 
             
@@ -440,19 +429,14 @@ ${levelInstruction}
                     localStorage.setItem('gemini_model_name', modelName); 
                     localStorage.setItem('tutor_level', levelVal);
                     document.getElementById('apikey-modal').classList.add('hidden'); 
-                } else { 
-                    throw new Error("API 연동 실패"); 
-                } 
+                } else { throw new Error("API 연동 실패"); } 
             } catch (err) { 
-                errorEl.innerText = `❌ 오류: ${err.message}`; 
-                errorEl.classList.remove('hidden'); 
-            } finally { 
-                document.getElementById('btn-save-key-text').innerText = "저장"; 
-            } 
+                errorEl.innerText = `❌ 오류: ${err.message}`; errorEl.classList.remove('hidden'); 
+            } finally { document.getElementById('btn-save-key-text').innerText = "저장"; } 
         }
 
         // ==========================================
-        // STT Logic
+        // STT Logic (Echo Lock 적용)
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -464,7 +448,8 @@ ${levelInstruction}
             recognition.interimResults = true; 
             recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
             recognition.onresult = (event) => {
-                if(!isActive || isTutorSpeaking) return; 
+                // 강력한 에코(자가인식) 방지 락
+                if(!isActive || isTutorSpeaking || isMicLocked) return; 
                 
                 lastVoiceTime = Date.now();
                 let interimTranscript = ''; let finalTranscript = '';
@@ -493,13 +478,13 @@ ${levelInstruction}
             };
             recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
             recognition.onend = () => { 
-                if (isActive && !isTutorSpeaking && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
+                if (isActive && !isTutorSpeaking && !isMicLocked && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
                     try { recognition.lang = sttLang; recognition.start(); } catch(e) {} 
                     setStatusUI('listen'); 
                 } 
             };
         }
-        function startSttLogic() { sttErrorOccurred = false; if (recognition) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
+        function startSttLogic() { sttErrorOccurred = false; if (recognition && !isMicLocked) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
         function stopSttLogic() { if (recognition) try { recognition.stop(); } catch(e) {} isProcessingAI = false; }
 
         // ==========================================
@@ -540,7 +525,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // TTS Engine (AX, AI 발음 강제 교정)
+        // TTS Engine & Sync
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -553,9 +538,11 @@ ${levelInstruction}
             stopSpeaking();
             if (!text) return;
             isTutorSpeaking = true;
+            isMicLocked = true; // 에코 락
             renderer.startSpeakingAnim('tts');
 
-            const rawChunks = text.match(/[^.?!]+[.?!]*[\s]*/g) || [text];
+            // 더 정교한 정규식: 빈 덩어리 제거 및 공백 기준 확실히 분할
+            const rawChunks = text.match(/[^.?!]+[.?!]*(?:\s|$)/g) || [text];
             ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
             currentChunkIndex = 0;
 
@@ -583,12 +570,12 @@ ${levelInstruction}
 
             const currentText = ttsQueue[currentChunkIndex];
             
-            // 엔진 발음 교정 로직 (시각적 텍스트는 원본 유지)
+            // 발음 완벽 교정 로직 (시각적 텍스트는 원본 유지)
             let spokenText = currentText;
             if (sttLang === 'ko-KR') { 
-                spokenText = spokenText.replace(/AI/gi, '에이아이').replace(/AX/gi, '에이엑스');
+                spokenText = spokenText.replace(/A\.?I\.?/gi, '에이아이').replace(/AX/gi, '에이엑스');
             } else { 
-                spokenText = spokenText.replace(/\bAI\b/gi, 'A I').replace(/\bAX\b/gi, 'A X');
+                spokenText = spokenText.replace(/A\.?I\.?/gi, 'A-I').replace(/AX/gi, 'A-X');
             }
             
             const utterance = new SpeechSynthesisUtterance(spokenText);
@@ -602,8 +589,9 @@ ${levelInstruction}
             if (bestVoice) utterance.voice = bestVoice;
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
+            // 싱크 밀림 방지 타임아웃
             clearTimeout(window.ttsFallbackTimeout);
-            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, (spokenText.length * 200) + 3000);
+            window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, Math.max(2500, spokenText.length * 120));
 
             utterance.onstart = () => { renderer.startSpeakingAnim('tts'); };
             utterance.onend = () => { currentChunkIndex++; playNextTtsChunk(); };
@@ -620,15 +608,17 @@ ${levelInstruction}
                 if (span) span.className = "text-slate-800 transition-colors duration-300 mr-1";
             });
 
+            // 1초(1000ms) 하드 락 지연 후 마이크 온 (에코 완전 방지)
             setTimeout(() => {
+                isMicLocked = false;
                 if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
                     try { recognition.lang = sttLang; recognition.start(); } catch(e){}
                     setStatusUI('listen');
                 }
-            }, 500);
+            }, 1000);
         }
 
-        function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
+        function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; isMicLocked = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
 
         // ==========================================
         // 렌더링 엔진 
