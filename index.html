@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AX LAB AI Tutor</title>
+    <title>AX LAB AI Tutor (Test Build)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
@@ -29,14 +29,14 @@
     <!-- 1. 시작 오버레이 -->
     <div id="start-overlay" class="fixed inset-0 bg-[#0f172a] z-[60] flex flex-col items-center justify-center text-white cursor-pointer transition-opacity duration-300" onclick="initAppOnInteraction()">
         <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-[#f8fafc] text-center">AX LAB AI Tutor</h2>
-        <p class="text-slate-400 text-xs md:text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start</p>
+        <p class="text-slate-400 text-xs md:text-sm font-bold tracking-widest uppercase animate-pulse">Click anywhere to start (Text Input Mode)</p>
     </div>
 
     <!-- 2. 무응답 대기 모달 -->
     <div id="inactivity-modal" class="hidden fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center mx-4">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">Are you there?</h3>
-            <p class="text-sm text-slate-500 font-medium mb-8">No voice detected for 1 minute.</p>
+            <p class="text-sm text-slate-500 font-medium mb-8">No interaction detected for 1 minute.</p>
             <div class="flex gap-3">
                 <button onclick="handleModal('yes')" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md">Yes</button>
                 <button onclick="handleModal('no')" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all">No</button>
@@ -48,9 +48,7 @@
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">설정 (Settings)</h3>
-            <p class="text-xs text-slate-500 font-medium mb-4 leading-relaxed">
-                안전한 AI 튜터 사용을 위한 환경을 세팅합니다.
-            </p>
+            <p class="text-xs text-slate-500 font-medium mb-4 leading-relaxed">안전한 AI 튜터 사용을 위한 환경을 세팅합니다.</p>
             
             <label class="block text-xs font-bold text-slate-700 mb-1 ml-1 mt-2">🔑 Gemini API Key</label>
             <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-indigo-500 transition-all">
@@ -94,12 +92,11 @@
     <!-- 메인 컨테이너 -->
     <div class="w-full max-w-6xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
         
-        <!-- 상단 헤더 및 컴팩트 컨트롤 패널 -->
+        <!-- 상단 헤더 및 컨트롤 패널 -->
         <div class="flex flex-row items-center justify-between border-b border-slate-100 pb-3">
             <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 hidden md:block">AX LAB AI Tutor</h1>
             
             <div class="flex flex-1 md:flex-none items-center justify-between md:justify-end gap-2 md:gap-4 bg-slate-50 p-1.5 md:p-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto">
-                
                 <button id="top-action-btn" onclick="toggleActiveMode()" class="px-4 py-2 md:py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs md:text-sm font-black rounded-lg shadow-sm transition-all flex items-center gap-1.5">
                     <span id="top-btn-icon">▶</span>
                     <span id="top-btn-text">START</span>
@@ -130,7 +127,21 @@
             <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-center gap-5">
                 
                 <!-- 튜터 말풍선 -->
-                <div id="tutor-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
+                <div id="tutor-bubble-container" class="bubble-container pt-12 pb-5 px-6 md:pt-14 md:pb-8 md:px-8 rounded-3xl bg-[#f4faff] border-2 border-slate-100 flex flex-col w-full min-h-[140px] shadow-sm relative transition-colors duration-500">
+                    
+                    <!-- [TTS 테스트 옵션 UI] -->
+                    <div class="absolute top-3 left-0 right-0 flex justify-center w-full">
+                        <div class="flex gap-4 text-[11px] font-bold text-slate-500 bg-white/70 backdrop-blur-md px-4 py-1.5 rounded-full shadow-sm border border-slate-200">
+                            <span class="text-indigo-400 border-r border-slate-300 pr-3">TTS 표시 모드</span>
+                            <label class="flex items-center gap-1 cursor-pointer hover:text-indigo-600 transition-colors">
+                                <input type="radio" name="tts-mode" value="whole" checked class="accent-indigo-600"> 전체 문장
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer hover:text-indigo-600 transition-colors">
+                                <input type="radio" name="tts-mode" value="sentence" class="accent-indigo-600"> 개별 문장
+                            </label>
+                        </div>
+                    </div>
+
                     <div id="tutor-text" class="text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300">
                         Waiting to start...
                     </div>
@@ -138,9 +149,9 @@
 
                 <!-- 사용자 말풍선 및 퀵 메뉴 영역 -->
                 <div class="w-full">
-                    <div id="user-bubble-container" class="bubble-container py-5 px-6 md:py-8 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[140px] shadow-sm relative transition-colors duration-500">
-                        <div id="user-text" class="text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed">
-                            Click START to speak...
+                    <div id="user-bubble-container" class="bubble-container py-5 px-6 md:py-6 md:px-8 rounded-3xl bg-slate-50 border-2 border-slate-100 flex flex-col justify-center w-full min-h-[120px] md:min-h-[130px] shadow-sm relative transition-colors duration-500">
+                        <div id="user-text" class="w-full transition-all duration-300">
+                            <p class="text-slate-400 font-medium text-[15px] md:text-lg text-center">Click START to begin...</p>
                         </div>
                     </div>
                     
@@ -195,6 +206,11 @@
         
         const modalEl = document.getElementById('inactivity-modal');
         const canvasEl = document.getElementById('tutorCanvas');
+
+        // 사용자 입력 활성화 감지 (모달 방지용)
+        window.updateActivityTimer = function() {
+            lastVoiceTime = Date.now();
+        };
 
         // ==========================================
         // 2. 동적 시스템 프롬프트
@@ -269,7 +285,7 @@ ${levelInstruction}
 
         function startActiveMode() {
             isActive = true;
-            isMicLocked = true; // 인사말 끝날 때까지 마이크 잠금
+            isMicLocked = true;
             clearInterval(welcomeIntervalId);
             stopSpeaking(); 
             
@@ -277,15 +293,14 @@ ${levelInstruction}
             topBtnIcon.innerText = "■";
             topBtnText.innerText = "STOP";
 
-            chatHistory = []; // 대화 기록 초기화
+            chatHistory = []; 
             
-            // 시작 버튼 누르면 AI가 먼저 대화 주도 (선톡)
             let initialGreeting = sttLang === 'ko-KR' 
                 ? "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" 
                 : "Hello! I am your AI tutor. How are you today?";
             
             setStatusUI('speak');
-            speakText(initialGreeting); // 재생 끝나면 자동으로 마이크 켜짐
+            speakText(initialGreeting);
             
             startInactivityTimer();
         }
@@ -308,8 +323,7 @@ ${levelInstruction}
             if (isTutorSpeaking) {
                 stopSpeaking();
                 isMicLocked = false;
-                if (isActive && recognition && !sttErrorOccurred) {
-                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
+                if (isActive && !sttErrorOccurred) {
                     setStatusUI('listen');
                 }
             }
@@ -330,7 +344,6 @@ ${levelInstruction}
                 document.getElementById('lang-en').className = "w-[45px] md:w-[55px] py-1.5 text-[10px] md:text-xs font-black bg-blue-500 text-white rounded-md shadow-sm transition-all";
                 if (!fromAI) setCharacter('xena');
             }
-            if (recognition && isActive && !fromAI) { recognition.stop(); }
             
             if (!isActive && hasInitialized) {
                 stopSpeaking();
@@ -350,35 +363,57 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 5. UI 상태 변화
+        // 5. UI 상태 변화 및 수동 입력 전송
         // ==========================================
+        window.submitTextInput = function() {
+            const inputField = document.getElementById('manual-text-input');
+            if (!inputField) return;
+            const text = inputField.value.trim();
+            if (text.length > 0) {
+                updateActivityTimer();
+                userText.innerHTML = text;
+                userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300 text-center";
+                callGeminiAI(text);
+            }
+        };
+
         function setStatusUI(state) {
             tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-400', 'border-blue-400');
             userBubbleContainer.classList.remove('border-slate-100', 'border-rose-400', 'bg-white', 'bg-slate-50', 'bg-rose-50');
 
             if (state === 'ready') {
-                userText.innerHTML = "Click START to speak...";
-                userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
+                userText.innerHTML = "<p class='text-slate-400 font-medium text-[15px] md:text-lg text-center'>Click START to begin...</p>";
                 userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
                 tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'listen') {
-                userText.innerHTML = "Feel free to speak...";
-                userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed animate-pulse";
+                userText.innerHTML = `
+                    <div class="flex flex-col md:flex-row w-full items-center gap-3">
+                        <input type="text" id="manual-text-input" placeholder="${sttLang === 'ko-KR' ? '메시지를 입력하세요...' : 'Type your message here...'}" class="flex-1 w-full bg-white border border-slate-300 text-slate-800 text-[15px] md:text-base rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-inner" oninput="updateActivityTimer()" onkeydown="if(event.key === 'Enter') submitTextInput()">
+                        <button onclick="submitTextInput()" class="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 shrink-0 whitespace-nowrap">
+                            ${sttLang === 'ko-KR' ? '전송' : 'Send'}
+                        </button>
+                    </div>
+                `;
                 userBubbleContainer.classList.add('bg-rose-50', 'border-rose-400');
                 tutorBubbleContainer.classList.add('border-slate-100');
+                
+                // 텍스트 필드 포커스
+                setTimeout(() => {
+                    const inputField = document.getElementById('manual-text-input');
+                    if (inputField) inputField.focus();
+                }, 100);
+
             } else if (state === 'process') {
-                userText.className = "text-slate-600 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed";
                 userBubbleContainer.classList.add('bg-white', 'border-slate-100');
                 tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'speak') {
                 userText.innerHTML = `
-                    <div class="flex flex-col items-start justify-center mt-1">
+                    <div class="flex flex-col items-center justify-center mt-1">
                         <button onclick="interruptTutor()" class="px-5 py-2.5 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-sm rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
-                            ✋ 말 끊고 말하기
+                            ✋ 말 끊고 응답하기
                         </button>
                     </div>
                 `;
-                userText.className = "w-full transition-all duration-300";
                 userBubbleContainer.classList.add('bg-white', 'border-slate-100');
                 tutorBubbleContainer.classList.add(currentChar === 'xeno' ? 'border-orange-400' : 'border-blue-400');
             }
@@ -439,55 +474,12 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // STT Logic
+        // STT Logic (텍스트 테스트 모드를 위해 비활성화)
         // ==========================================
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
         let sttErrorOccurred = false; 
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = true; 
-            recognition.interimResults = true; 
-            recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
-            recognition.onresult = (event) => {
-                if(!isActive || isTutorSpeaking || isMicLocked) return; 
-                
-                lastVoiceTime = Date.now();
-                let interimTranscript = ''; let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; else interimTranscript += event.results[i][0].transcript; }
-                if (interimTranscript) { userText.className = "text-slate-400 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed"; userText.innerHTML = interimTranscript; }
-                
-                if (finalTranscript && finalTranscript.trim().length > 1) {
-                    let processed = finalTranscript.trim();
-                    if (!processed.endsWith('?')) {
-                        const stripped = processed.replace(/[.\s]+$/, '');
-                        if (sttLang === 'ko-KR') {
-                            const questionEndings = /(까|니|냐|나요|가요|까요|을까요|대요|죠|은가요|는가요|인가요)$/;
-                            const hasQuestionWord = /(뭐|무엇|왜|언제|누가|누구|어떻게|어디)/.test(stripped);
-                            const casualEndings = /(어|해|야|지)$/;
-                            if (questionEndings.test(stripped) || (hasQuestionWord && casualEndings.test(stripped)) || hasQuestionWord) { processed = stripped + '?'; }
-                        } else if (sttLang === 'en-US') {
-                            const startsWithQuestionWord = /^(who|what|where|when|why|how|is|are|am|do|does|did|can|could|will|would|shall|should|may|might)\b/i.test(stripped);
-                            if (startsWithQuestionWord) { processed = stripped + '?'; }
-                        }
-                    }
-                    userText.className = "text-slate-800 font-medium text-[15px] md:text-lg leading-relaxed transition-all duration-300";
-                    userText.innerHTML = processed;
-                    recognition.stop();
-                    callGeminiAI(processed);
-                }
-            };
-            recognition.onerror = (event) => { if (event.error === 'not-allowed' || event.error === 'network') { sttErrorOccurred = true; alert("마이크 권한 오류"); stopActiveMode(); } };
-            recognition.onend = () => { 
-                if (isActive && !isTutorSpeaking && !isMicLocked && !isProcessingAI && modalEl.classList.contains('hidden') && !sttErrorOccurred) { 
-                    try { recognition.lang = sttLang; recognition.start(); } catch(e) {} 
-                    setStatusUI('listen'); 
-                } 
-            };
-        }
-        function startSttLogic() { sttErrorOccurred = false; if (recognition && !isMicLocked) { recognition.lang = sttLang; try { recognition.start(); } catch(e) {} } }
-        function stopSttLogic() { if (recognition) try { recognition.stop(); } catch(e) {} isProcessingAI = false; }
+        
+        function startSttLogic() { sttErrorOccurred = false; }
+        function stopSttLogic() { isProcessingAI = false; }
 
         // ==========================================
         // Gemini API Logic
@@ -527,11 +519,11 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // TTS Engine (Sync 및 발음 치환 적용)
+        // TTS Engine (옵션 적용 및 싱크 튜닝)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
-        function handleModal(choice) { modalEl.classList.add('hidden'); if (choice === 'yes') startActiveMode(); else stopActiveMode(); }
+        function handleModal(choice) { modalEl.classList.add('hidden'); if (choice === 'yes') { startActiveMode(); } else stopActiveMode(); }
 
         let voices = []; speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
         let ttsQueue = []; let currentChunkIndex = 0;
@@ -543,13 +535,18 @@ ${levelInstruction}
             isMicLocked = true;
             renderer.startSpeakingAnim('tts');
 
-            // 화면에 텍스트 한 번에 표시 (싱크 버그 및 깜빡임 원천 차단)
-            tutorText.innerHTML = text;
+            const ttsMode = document.querySelector('input[name="tts-mode"]:checked').value;
 
-            // 오디오용으로만 문장 분할
+            // 오디오 및 개별 문장 표시용 분할
             const rawChunks = text.match(/[^.?!]+[.?!]*(?:\s|$)/g) || [text];
             ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
             currentChunkIndex = 0;
+
+            if (ttsMode === 'whole') {
+                tutorText.innerHTML = text; // 한 번에 전체 텍스트 렌더링
+            } else {
+                tutorText.innerHTML = ""; // 문장별 모드일 땐 지우고 시작
+            }
 
             playNextTtsChunk();
         }
@@ -558,6 +555,11 @@ ${levelInstruction}
             if (currentChunkIndex >= ttsQueue.length) { completeSpeakingSequence(); return; }
 
             const currentText = ttsQueue[currentChunkIndex];
+            const ttsMode = document.querySelector('input[name="tts-mode"]:checked').value;
+
+            if (ttsMode === 'sentence') {
+                tutorText.innerHTML = currentText; // 현재 읽고 있는 문장만 화면에 렌더링
+            }
             
             // 엔진 발음 교정 로직 
             let spokenText = currentText;
@@ -593,17 +595,16 @@ ${levelInstruction}
             
             setTimeout(() => {
                 isMicLocked = false;
-                if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
-                    try { recognition.lang = sttLang; recognition.start(); } catch(e){}
+                if (isActive && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
                     setStatusUI('listen');
                 }
-            }, 1000);
+            }, 500);
         }
 
         function stopSpeaking() { clearTimeout(window.ttsFallbackTimeout); speechSynthesis.cancel(); ttsQueue = []; currentChunkIndex = 0; isTutorSpeaking = false; isMicLocked = false; renderer.stopSpeakingAnim(); window.activeUtterance = null; }
 
         // ==========================================
-        // 렌더링 엔진 
+        // 렌더링 엔진 (30 FPS 제한 적용)
         // ==========================================
         const renderer = {
             config: { "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } },
@@ -612,7 +613,39 @@ ${levelInstruction}
             init: function() { this.ctx = canvasEl.getContext('2d'); this.images.xena.src = "Xena_base.png"; this.images.xeno.src = "Xeno_base.png"; this.images.xena.onload = () => { this.imageLoaded.xena = true; }; this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; this.startLoop(); },
             startSpeakingAnim: function(type) { clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; this.simulation.speakType = type; if (type === 'tts') { const vowels = ['A', 'E', 'I', 'O', 'U']; let vIdx = 0; this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; this.simulation.vowel = vowels[vIdx]; vIdx = (vIdx + 1) % vowels.length; }, 130); } },
             stopSpeakingAnim: function() { this.simulation.isSpeaking = false; this.simulation.speakType = 'none'; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; },
-            startLoop: function() { const drawFrame = () => { this.ctx.clearRect(0, 0, 400, 600); const breathe = Math.sin(Date.now() / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe); if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); } this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore(); if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > 200) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 212) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } } requestAnimationFrame(drawFrame); }; drawFrame(); },
+            startLoop: function() { 
+                let then = performance.now();
+                const fpsInterval = 1000 / 30; // 30 FPS 제한
+
+                const drawFrame = (now) => { 
+                    requestAnimationFrame(drawFrame); 
+                    const elapsed = now - then;
+
+                    if (elapsed > fpsInterval) {
+                        then = now - (elapsed % fpsInterval);
+
+                        this.ctx.clearRect(0, 0, 400, 600); 
+                        const breathe = Math.sin(Date.now() / 420) * 3.5; 
+                        this.ctx.save(); 
+                        this.ctx.translate(200, 300 + breathe); 
+                        if (this.imageLoaded[currentChar]) { const img = this.images[currentChar]; const cfg = this.config[currentChar]; const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); } else { this.drawBackupSilhouette(); } 
+                        this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); 
+                        this.ctx.restore(); 
+
+                        if (!this.simulation.isSpeaking) { 
+                            this.simulation.blinkTimer++; 
+                            if (this.simulation.blinkTimer > 100) { // 30fps 기준 (약 3.3초)
+                                this.simulation.blinkState = 1; 
+                                if (this.simulation.blinkTimer > 106) { 
+                                    this.simulation.blinkState = 0; 
+                                    this.simulation.blinkTimer = 0; 
+                                } 
+                            } 
+                        } 
+                    }
+                }; 
+                requestAnimationFrame(drawFrame); 
+            },
             drawBackupSilhouette: function() { this.ctx.save(); this.ctx.beginPath(); const isXena = currentChar === 'xena'; this.ctx.arc(0, 140, 100, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f0f7ff" : "#fffbf2"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(0, 10, 105, 0, Math.PI * 2); this.ctx.fillStyle = isXena ? "#f8fafc" : "#fffbeb"; this.ctx.fill(); this.ctx.strokeStyle = "#cbd5e1"; this.ctx.lineWidth = 4; this.ctx.stroke(); this.ctx.fillStyle = "#64748b"; this.ctx.font = "bold 13px sans-serif"; this.ctx.textAlign = "center"; this.ctx.fillText(`[${currentChar}_base.png] Loading...`, 0, 10); this.ctx.restore(); },
             drawVectorEyes: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const eyeYOff = cfg.eyeY - 200; const drawSingleEye = (ex, isLeft) => { this.ctx.save(); if (this.simulation.blinkState === 1) { this.ctx.beginPath(); this.ctx.arc(ex, eyeYOff + cfg.eyeHeight * 0.25, cfg.eyeWidth * 0.9, 0.1 * Math.PI, 0.9 * Math.PI, false); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness * 3.5; this.ctx.stroke(); } else { this.ctx.beginPath(); this.ctx.ellipse(ex, eyeYOff, cfg.eyeWidth, cfg.eyeHeight, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness || 1.5; this.ctx.stroke(); this.ctx.beginPath(); const pw = Math.min(cfg.eyeWidth * 0.85, cfg.pupilSize / 2); const px = ex + (isLeft ? (cfg.pupilLeftOffsetX||0) : (cfg.pupilRightOffsetX||0)); const py = eyeYOff + (isLeft ? (cfg.pupilLeftOffsetY||0) : (cfg.pupilRightOffsetY||0)); this.ctx.ellipse(px, py, pw, pw, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#1e293b"; this.ctx.fill(); this.ctx.beginPath(); this.ctx.arc(px - pw*0.35, py - pw*0.35, pw*0.35, 0, Math.PI*2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); } this.ctx.restore(); }; drawSingleEye(-halfSpacing, true); drawSingleEye(halfSpacing, false); },
             drawVectorEyebrows: function() { const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const browY = (cfg.eyeY - 200) + cfg.eyebrowY; const drawBrow = (bx, isLeft) => { this.ctx.save(); this.ctx.translate(bx, browY); this.ctx.rotate((cfg.eyebrowAngle * Math.PI / 180) * (isLeft ? 1 : -1)); this.ctx.beginPath(); const half = cfg.eyebrowLength / 2; this.ctx.moveTo(-half, isLeft ? -1.5 : 1.5); this.ctx.quadraticCurveTo(0, -cfg.eyebrowThickness * 1.5, half, isLeft ? 1.5 : -1.5); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyebrowThickness; this.ctx.lineCap = "round"; this.ctx.stroke(); this.ctx.restore(); }; drawBrow(-halfSpacing, true); drawBrow(halfSpacing, false); },
