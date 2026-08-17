@@ -169,7 +169,7 @@
         let isActive = false;   
         let currentChar = 'xena'; 
         let isTutorSpeaking = false;
-        let isMicLocked = false; // 에코 방지 하드 락 변수
+        let isMicLocked = false; 
         let hasInitialized = false;
         let sttLang = 'en-US'; 
         
@@ -238,7 +238,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 3. 메인 컨트롤 및 초기 안내 멘트
+        // 3. 메인 컨트롤 및 웰컴/선톡 로직
         // ==========================================
         function initAppOnInteraction() {
             if (hasInitialized) return;
@@ -257,12 +257,7 @@ ${levelInstruction}
 
         function playWelcomeMessage() {
             if (isActive) return; 
-            let msg = "";
-            if (sttLang === 'ko-KR') {
-                msg = "환영합니다! 저는 AX LAB AI 튜터예요. 시작 버튼을 눌러주세요.";
-            } else {
-                msg = "Welcome! I'm AX LAB AI Tutor. Please, click the Start button.";
-            }
+            let msg = sttLang === 'ko-KR' ? "시작 버튼을 클릭해 주세요." : "Please click the START button.";
             speakText(msg);
         }
 
@@ -274,7 +269,7 @@ ${levelInstruction}
 
         function startActiveMode() {
             isActive = true;
-            isMicLocked = false;
+            isMicLocked = true; // 인사말 끝날 때까지 마이크 잠금
             clearInterval(welcomeIntervalId);
             stopSpeaking(); 
             
@@ -282,8 +277,16 @@ ${levelInstruction}
             topBtnIcon.innerText = "■";
             topBtnText.innerText = "STOP";
 
-            setStatusUI('listen');
-            startSttLogic();
+            chatHistory = []; // 대화 기록 초기화
+            
+            // 시작 버튼 누르면 AI가 먼저 대화 주도 (선톡)
+            let initialGreeting = sttLang === 'ko-KR' 
+                ? "안녕! 나는 네 학습을 도와줄 AI 튜터야. 오늘 기분이 어때?" 
+                : "Hello! I am your AI tutor. How are you today?";
+            
+            setStatusUI('speak');
+            speakText(initialGreeting); // 재생 끝나면 자동으로 마이크 켜짐
+            
             startInactivityTimer();
         }
 
@@ -347,7 +350,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // 5. UI 상태 변화 
+        // 5. UI 상태 변화
         // ==========================================
         function setStatusUI(state) {
             tutorBubbleContainer.classList.remove('border-slate-100', 'border-orange-400', 'border-blue-400');
@@ -359,7 +362,7 @@ ${levelInstruction}
                 userBubbleContainer.classList.add('bg-slate-50', 'border-slate-100');
                 tutorBubbleContainer.classList.add('border-slate-100');
             } else if (state === 'listen') {
-                userText.innerHTML = "Listening...";
+                userText.innerHTML = "Feel free to speak...";
                 userText.className = "text-indigo-500 font-medium text-[15px] md:text-lg transition-all duration-300 leading-relaxed animate-pulse";
                 userBubbleContainer.classList.add('bg-rose-50', 'border-rose-400');
                 tutorBubbleContainer.classList.add('border-slate-100');
@@ -371,7 +374,7 @@ ${levelInstruction}
                 userText.innerHTML = `
                     <div class="flex flex-col items-start justify-center mt-1">
                         <button onclick="interruptTutor()" class="px-5 py-2.5 bg-rose-100 border border-rose-200 text-rose-600 font-bold text-sm rounded-full shadow-sm hover:bg-rose-200 transition-all active:scale-95 flex items-center gap-1.5">
-                            ✋ 말 끊고 질문하기
+                            ✋ 말 끊고 말하기
                         </button>
                     </div>
                 `;
@@ -436,7 +439,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // STT Logic (Echo Lock 적용)
+        // STT Logic
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
@@ -448,7 +451,6 @@ ${levelInstruction}
             recognition.interimResults = true; 
             recognition.onspeechstart = () => { lastVoiceTime = Date.now(); };
             recognition.onresult = (event) => {
-                // 강력한 에코(자가인식) 방지 락
                 if(!isActive || isTutorSpeaking || isMicLocked) return; 
                 
                 lastVoiceTime = Date.now();
@@ -525,7 +527,7 @@ ${levelInstruction}
         }
 
         // ==========================================
-        // TTS Engine & Sync
+        // TTS Engine (Sync 및 발음 치환 적용)
         // ==========================================
         function startInactivityTimer() { lastVoiceTime = Date.now(); clearTimeout(inactivityTimeout); checkInactivity(); }
         function checkInactivity() { if (!isActive || isTutorSpeaking || isProcessingAI) { inactivityTimeout = setTimeout(checkInactivity, 1000); return; } if (Date.now() - lastVoiceTime > INACTIVITY_LIMIT) { stopActiveMode(true); modalEl.classList.remove('hidden'); } else { inactivityTimeout = setTimeout(checkInactivity, 1000); } }
@@ -538,44 +540,31 @@ ${levelInstruction}
             stopSpeaking();
             if (!text) return;
             isTutorSpeaking = true;
-            isMicLocked = true; // 에코 락
+            isMicLocked = true;
             renderer.startSpeakingAnim('tts');
 
-            // 더 정교한 정규식: 빈 덩어리 제거 및 공백 기준 확실히 분할
+            // 화면에 텍스트 한 번에 표시 (싱크 버그 및 깜빡임 원천 차단)
+            tutorText.innerHTML = text;
+
+            // 오디오용으로만 문장 분할
             const rawChunks = text.match(/[^.?!]+[.?!]*(?:\s|$)/g) || [text];
             ttsQueue = rawChunks.map(c => c.trim()).filter(c => c.length > 0);
             currentChunkIndex = 0;
 
-            tutorText.innerHTML = '';
-            ttsQueue.forEach((chunk, idx) => {
-                const span = document.createElement('span');
-                span.id = `tts-chunk-${idx}`;
-                span.className = "text-slate-400 transition-colors duration-300 mr-1";
-                span.innerText = chunk + ' ';
-                tutorText.appendChild(span);
-            });
             playNextTtsChunk();
         }
 
         function playNextTtsChunk() {
             if (currentChunkIndex >= ttsQueue.length) { completeSpeakingSequence(); return; }
 
-            ttsQueue.forEach((_, idx) => {
-                const span = document.getElementById(`tts-chunk-${idx}`);
-                if (span) {
-                    if (idx === currentChunkIndex) span.className = "text-slate-800 transition-colors duration-300 mr-1";
-                    else span.className = "text-slate-400 transition-colors duration-300 mr-1";
-                }
-            });
-
             const currentText = ttsQueue[currentChunkIndex];
             
-            // 발음 완벽 교정 로직 (시각적 텍스트는 원본 유지)
+            // 엔진 발음 교정 로직 
             let spokenText = currentText;
             if (sttLang === 'ko-KR') { 
                 spokenText = spokenText.replace(/A\.?I\.?/gi, '에이아이').replace(/AX/gi, '에이엑스');
             } else { 
-                spokenText = spokenText.replace(/A\.?I\.?/gi, 'A-I').replace(/AX/gi, 'A-X');
+                spokenText = spokenText.replace(/A\.?I\.?/gi, 'A I').replace(/AX/gi, 'A X');
             }
             
             const utterance = new SpeechSynthesisUtterance(spokenText);
@@ -589,7 +578,6 @@ ${levelInstruction}
             if (bestVoice) utterance.voice = bestVoice;
             utterance.pitch = 1.0; utterance.rate = 1.0;
 
-            // 싱크 밀림 방지 타임아웃
             clearTimeout(window.ttsFallbackTimeout);
             window.ttsFallbackTimeout = setTimeout(() => { if (isTutorSpeaking) { currentChunkIndex++; playNextTtsChunk(); } }, Math.max(2500, spokenText.length * 120));
 
@@ -603,12 +591,6 @@ ${levelInstruction}
             clearTimeout(window.ttsFallbackTimeout); isTutorSpeaking = false; renderer.stopSpeakingAnim(); window.activeUtterance = null;
             lastVoiceTime = Date.now(); isProcessingAI = false;
             
-            ttsQueue.forEach((_, idx) => {
-                const span = document.getElementById(`tts-chunk-${idx}`);
-                if (span) span.className = "text-slate-800 transition-colors duration-300 mr-1";
-            });
-
-            // 1초(1000ms) 하드 락 지연 후 마이크 온 (에코 완전 방지)
             setTimeout(() => {
                 isMicLocked = false;
                 if (isActive && recognition && modalEl.classList.contains('hidden') && !sttErrorOccurred) {
