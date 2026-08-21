@@ -30,6 +30,7 @@
 </head>
 <body class="min-h-screen flex flex-col select-none bg-slate-900">
 
+    <!-- 초기 Gate Page -->
     <div id="gate-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
         <h1 class="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">AX LAB AI Tutor</h1>
         <div class="w-64 flex flex-col gap-3 mt-8">
@@ -38,6 +39,7 @@
         </div>
     </div>
 
+    <!-- API Key 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-md w-full mx-4">
             <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Key 설정</h3>
@@ -49,11 +51,12 @@
         </div>
     </div>
 
+    <!-- 메인 앱 컨테이너 -->
     <div id="app-container" class="w-full flex-col flex-1 p-6 md:p-12 bg-white hidden">
         <div class="w-full max-w-5xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
             
+            <!-- 상단 헤더 -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
-                <!-- [백로그 7] 로고 클릭 시 새로고침(리셋) 처리 -->
                 <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="window.location.reload()">AX LAB AI Tutor</h1>
                 <div class="flex items-center gap-3">
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
@@ -61,8 +64,10 @@
                 </div>
             </div>
 
+            <!-- 중앙 영역 -->
             <div class="flex flex-col md:flex-row gap-4 md:gap-8 flex-1 items-center justify-center">
                 
+                <!-- 왼쪽 캐릭터 영역 -->
                 <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col items-center gap-3 relative">
                     <div class="flex justify-center w-full relative">
                         <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10"></canvas>
@@ -74,7 +79,9 @@
                     </div>
                 </div>
 
+                <!-- 오른쪽 대화 영역 -->
                 <div class="w-full md:w-7/12 lg:w-8/12 flex flex-col justify-center gap-2 relative">
+                    
                     <div class="relative w-full">
                         <div class="control-group absolute top-4 left-4 flex items-center gap-2 z-10">
                             <div class="flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm" onclick="toggleSound()">
@@ -85,12 +92,14 @@
                             </div>
                         </div>
 
+                        <!-- 말풍선 및 칩 -->
                         <div id="tutor-bubble-container" class="bubble-container p-6 pt-16 md:p-8 md:pt-16 rounded-3xl bg-[#f4faff] border-2 border-slate-100 min-h-[160px] max-h-[320px] overflow-y-auto flex flex-col items-start shadow-sm transition-colors duration-500">
                             <div id="tutor-text" class="text-slate-800 font-medium text-[18px] md:text-xl leading-relaxed w-full mb-4"></div>
                             <div id="quick-replies-container" class="flex flex-wrap gap-2 w-full min-h-[36px] transition-opacity duration-300"></div>
                         </div>
                     </div>
 
+                    <!-- 입력창 영역 -->
                     <div class="p-4 md:p-5 rounded-3xl bg-slate-50 border-2 border-slate-100 shadow-sm mt-3 flex flex-col gap-3">
                         <div class="flex items-center justify-start border-b border-slate-200/60 pb-2">
                             <div class="flex items-center gap-1.5 bg-slate-200/60 px-3 py-1.5 rounded-xl opacity-60 cursor-not-allowed select-none">
@@ -115,6 +124,7 @@
         </div>
     </div>
 
+    <!-- 스크립트 영역 -->
     <script>
         let currentChar = 'xena';
         let chatHistories = { xena: [], xeno: [] };
@@ -155,9 +165,7 @@
                     const ctx = new AudioCtx();
                     const buffer = ctx.createBuffer(1, 1, 22050);
                     const source = ctx.createBufferSource();
-                    source.buffer = buffer;
-                    source.connect(ctx.destination);
-                    source.start(0);
+                    source.buffer = buffer; source.connect(ctx.destination); source.start(0);
                     if (ctx.state === 'suspended') ctx.resume();
                 }
                 isAudioUnlocked = true;
@@ -169,36 +177,25 @@
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
-                const ctx = new AudioCtx();
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.2);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.start(now); osc.stop(now + 0.2);
+                const ctx = new AudioCtx(); const now = ctx.currentTime;
+                const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.2);
             } catch (e) {}
         }
 
         function triggerTransformParticles() {
             playTransformSFX();
             const ctx = particleCanvas.getContext('2d');
-            let animationFrameId = null;
-            const startTime = performance.now();
+            let animationFrameId = null; const startTime = performance.now();
             const particles = Array.from({ length: 35 }, () => ({
-                x: 200, y: 300,
-                vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.5) * 14,
-                size: Math.random() * 6 + 3,
-                color: Math.random() > 0.3 ? '#facc15' : '#ffffff', alpha: 1
+                x: 200, y: 300, vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.5) * 14,
+                size: Math.random() * 6 + 3, color: Math.random() > 0.3 ? '#facc15' : '#ffffff', alpha: 1
             }));
             function drawParticles(now) {
                 const elapsed = now - startTime;
-                if (elapsed >= 600) {
-                    ctx.clearRect(0, 0, 400, 600); cancelAnimationFrame(animationFrameId); return;
-                }
+                if (elapsed >= 600) { ctx.clearRect(0, 0, 400, 600); cancelAnimationFrame(animationFrameId); return; }
                 ctx.clearRect(0, 0, 400, 600);
                 particles.forEach(p => {
                     p.x += p.vx; p.y += p.vy; p.alpha = Math.max(0, 1 - elapsed / 600);
@@ -216,12 +213,10 @@
 
         function setUILock(state) {
             if (state === 'fetching') {
-                inputEl.disabled = true; sendBtn.disabled = true; 
-                btnXena.disabled = true; btnXeno.disabled = true;
+                inputEl.disabled = true; sendBtn.disabled = true; btnXena.disabled = true; btnXeno.disabled = true;
                 quickRepliesContainer.style.pointerEvents = 'none';
             } else if (state === 'speaking' || state === 'idle') {
-                inputEl.disabled = false; sendBtn.disabled = false; 
-                btnXena.disabled = false; btnXeno.disabled = false;
+                inputEl.disabled = false; sendBtn.disabled = false; btnXena.disabled = false; btnXeno.disabled = false;
                 quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
                 inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
                 if(state === 'idle') inputEl.focus();
@@ -242,8 +237,7 @@
             localStorage.setItem('ax_user_name', nameInput);
 
             unlockAudioContext();
-            document.body.classList.remove('bg-slate-900');
-            document.body.classList.add('bg-white');
+            document.body.classList.remove('bg-slate-900'); document.body.classList.add('bg-white');
             document.getElementById('gate-page').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
 
@@ -254,21 +248,17 @@
             await setCharacterMode(startChar, true);
         }
 
-        // [백로그 10] 사운드 토글 시 즉시 Replay 기능 복구
         function toggleSound() {
             isSoundOn = !isSoundOn;
-            const knob = document.getElementById('toggle-knob');
-            const btn = document.getElementById('sound-toggle');
-            const label = document.getElementById('sound-label');
+            const knob = document.getElementById('toggle-knob'); const btn = document.getElementById('sound-toggle'); const label = document.getElementById('sound-label');
             if (isSoundOn) {
                 knob.style.transform = 'translateX(12px)'; btn.classList.replace('bg-slate-200', 'bg-indigo-600');
                 label.innerText = 'SOUND ON'; label.classList.replace('text-slate-500', 'text-indigo-600');
-                if (currentRawText) { speakText(currentRawText); } // Replay trigger
+                if (currentRawText) { speakText(currentRawText); } 
             } else {
                 knob.style.transform = 'translateX(0)'; btn.classList.replace('bg-indigo-600', 'bg-slate-200');
                 label.innerText = 'SOUND OFF'; label.classList.replace('text-indigo-600', 'text-slate-500');
-                cancelCurrentSpeech();
-                setUILock('idle');
+                cancelCurrentSpeech(); setUILock('idle');
             }
         }
 
@@ -284,6 +274,7 @@
                 if (!isSoundOn || !('speechSynthesis' in window) || !text) { resolve(); return; }
                 const utterance = new SpeechSynthesisUtterance(text);
                 
+                // 제노(EN) 칩은 무조건 영어 엔진 강제 (한글 1 Concept 포함되더라도 영어 억양으로 발음)
                 utterance.lang = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
                 
                 const voice = getBestVoice(utterance.lang.split('-')[0]);
@@ -296,13 +287,9 @@
 
         async function speakText(text) {
             if (!isSoundOn || !('speechSynthesis' in window)) {
-                tutorText.innerHTML = formatUIText(text); 
-                setUILock('idle'); 
-                return;
+                tutorText.innerHTML = formatUIText(text); setUILock('idle'); return;
             }
-            cancelCurrentSpeech(); 
-            const mySpeechId = currentSpeechId;
-            setUILock('speaking'); 
+            cancelCurrentSpeech(); const mySpeechId = currentSpeechId; setUILock('speaking'); 
 
             const sentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 0) || [text];
             
@@ -312,7 +299,6 @@
                 if (!sentence) continue;
 
                 let cleanSentenceForVoice = sentence.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/[\[\]]/g, ''); 
-
                 const highlightedHtml = text.replace(sentence, `<span class="highlight">${sentence}</span>`);
                 tutorText.innerHTML = formatUIText(highlightedHtml);
                 tutorBubbleContainer.scrollTop = tutorBubbleContainer.scrollHeight;
@@ -320,21 +306,17 @@
                 renderer.startSpeakingAnim();
                 await new Promise((resolve) => {
                     const utterance = new SpeechSynthesisUtterance(cleanSentenceForVoice);
-                    
                     utterance.lang = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
-                    
                     const voice = getBestVoice(utterance.lang.split('-')[0]);
                     if (voice) utterance.voice = voice;
                     utterance.rate = currentChar === 'xena' ? 1.0 : 0.9;
                     utterance.onend = () => { renderer.stopSpeakingAnim(); resolve(); };
                     utterance.onerror = () => { renderer.stopSpeakingAnim(); resolve(); };
-                    if (mySpeechId === currentSpeechId) window.speechSynthesis.speak(utterance);
-                    else resolve();
+                    if (mySpeechId === currentSpeechId) window.speechSynthesis.speak(utterance); else resolve();
                 });
             }
             if (mySpeechId === currentSpeechId) {
-                tutorText.innerHTML = formatUIText(currentRawText); 
-                setUILock('idle'); 
+                tutorText.innerHTML = formatUIText(currentRawText); setUILock('idle'); 
             }
         }
 
@@ -349,14 +331,11 @@
             suggestionsArr.slice(0, 3).forEach(text => {
                 const btn = document.createElement('button');
                 btn.innerText = text; btn.className = chipClass;
-                
                 btn.onclick = function() {
                     if(currentChar === 'xena') {
-                        btn.classList.remove('bg-white', 'text-blue-600');
-                        btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                        btn.classList.remove('bg-white', 'text-blue-600'); btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
                     } else {
-                        btn.classList.remove('bg-white', 'text-orange-600');
-                        btn.classList.add('bg-orange-600', 'text-white', 'border-orange-600');
+                        btn.classList.remove('bg-white', 'text-orange-600'); btn.classList.add('bg-orange-600', 'text-white', 'border-orange-600');
                     }
                     setTimeout(() => { sendMessage(text, true); }, 400);
                 };
@@ -382,32 +361,25 @@
                 bubble.classList.add('bg-[#f4faff]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-blue-500 text-white";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
-                sendBtn.innerText = "보내기";
-                sendBtn.className = "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
+                sendBtn.innerText = "보내기"; sendBtn.className = "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
                 inputEl.classList.replace('focus-within:border-orange-500', 'focus-within:border-blue-500');
             } else {
                 bubble.classList.add('bg-[#fffcf5]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-orange-500 text-white";
-                sendBtn.innerText = "Send";
-                sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
+                sendBtn.innerText = "Send"; sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
                 inputEl.classList.replace('focus-within:border-blue-500', 'focus-within:border-orange-500');
             }
 
             if (doGreeting && window.appConfig) {
-                let greetingMsg = "";
-                let chips = [];
+                let greetingMsg = ""; let chips = [];
                 const configNode = window.appConfig.greetings[char];
                 
                 if (!hasMet[char]) {
-                    hasMet[char] = true;
-                    greetingMsg = configNode.first(currentUserName);
-                    chips = configNode.firstChips;
+                    hasMet[char] = true; greetingMsg = configNode.first(currentUserName); chips = configNode.firstChips;
                 } else {
-                    greetingMsg = configNode.revisit(currentUserName);
-                    chips = configNode.revisitChips;
+                    greetingMsg = configNode.revisit(currentUserName); chips = configNode.revisitChips;
                 }
-                
                 currentRawText = greetingMsg;
                 chatHistories[char].push({ role: "model", parts: [{ text: greetingMsg }] });
                 renderSuggestions(chips);
@@ -415,22 +387,16 @@
             }
         }
 
-        function openApiKeyModal() {
-            document.getElementById('apikey-modal').classList.remove('hidden');
-            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
-        }
+        function openApiKeyModal() { document.getElementById('apikey-modal').classList.remove('hidden'); document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; }
         function closeApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
         async function saveApiKey() {
             const key = document.getElementById('api-key-input').value.trim();
-            if (!key) return;
-            localStorage.setItem('gemini_api_key', key);
-            closeApiKeyModal();
+            if (!key) return; localStorage.setItem('gemini_api_key', key); closeApiKeyModal();
             await setCharacterMode(currentChar, true); 
         }
 
         async function sendMessage(suggestedText = null, isFromChip = false) {
-            unlockAudioContext();
-            cancelCurrentSpeech();
+            unlockAudioContext(); cancelCurrentSpeech();
 
             const rawMsg = suggestedText || inputEl.value.trim();
             const apiKey = localStorage.getItem('gemini_api_key');
@@ -438,11 +404,21 @@
             if (!apiKey) { openApiKeyModal(); return; }
 
             setUILock('fetching'); 
-            
-            if (!isFromChip) {
-                inputEl.value = rawMsg; 
-            } else {
-                inputEl.value = '';
+            if (!isFromChip) { inputEl.value = rawMsg; } else { inputEl.value = ''; }
+
+            // [백로그 3] 사용자의 100% 한글 타이핑에 대한 제노의 방어 기제 로직 (프론트엔드 보조)
+            if (currentChar === 'xeno' && !isFromChip && /^[가-힣\s\.,!?]+$/.test(rawMsg)) {
+                chatHistories[currentChar].push({ role: "user", parts: [{ text: rawMsg }] });
+                const defenseMsg = "Oh, I'm sorry. I don't understand Korean yet. Can you teach me in English?";
+                chatHistories[currentChar].push({ role: "model", parts: [{ text: defenseMsg }] });
+                
+                await speakUserText(rawMsg);
+                inputEl.value = ''; quickRepliesContainer.innerHTML = '';
+                
+                currentRawText = defenseMsg;
+                renderSuggestions(["Sure, I will teach you!", "Okay, no Korean!", "Let's speak English."]);
+                await speakText(defenseMsg);
+                return; // API 호출 생략하고 즉시 방어
             }
 
             chatHistories[currentChar].push({ role: "user", parts: [{ text: rawMsg }] });
@@ -451,11 +427,9 @@
             const userTTSPromise = speakUserText(rawMsg);
             const apiDataPromise = fetchGeminiDataOnly(rawMsg);
 
-            await userTTSPromise; 
-            await new Promise(resolve => setTimeout(resolve, 500)); 
+            await userTTSPromise; await new Promise(resolve => setTimeout(resolve, 500)); 
             
-            inputEl.value = ''; 
-            quickRepliesContainer.innerHTML = '';
+            inputEl.value = ''; quickRepliesContainer.innerHTML = '';
             tutorText.innerHTML = `<span class='text-slate-400 animate-pulse'>...</span>`;
             kbdIndicator.innerText = '-'; kbdIndicator.className = 'ml-2 px-2 py-0.5 text-[10px] font-extrabold rounded bg-slate-100 text-slate-400 transition-colors shrink-0';
 
@@ -474,24 +448,13 @@
             const apiKey = localStorage.getItem('gemini_api_key');
             if(!apiKey) return null;
 
-            let guardrail = "";
-            const hasKorean = /[가-힣]/.test(userMsg);
-            const hasEnglish = /[a-zA-Z]/.test(userMsg);
-            
-            if (currentChar === 'xena' && hasEnglish && !hasKorean) {
-                guardrail = "\n[SYSTEM NOTE: 사용자가 영어를 썼습니다. 넌 영어를 모르니 '나 영어 잘 몰라, 한국말로 해줘!' 뉘앙스로 100% 한국어로만 짧게 역질문해.]";
-            } else if (currentChar === 'xeno' && hasKorean) {
-                guardrail = "\n[SYSTEM NOTE: 사용자가 한국어를 썼습니다. 넌 한국어를 모르니 'I don't know Korean. Speak English please!' 뉘앙스로 100% 쉬운 영어로만 짧게 역질문해.]";
-            }
-
             const baseSystemPrompt = (currentChar === 'xena') ? window.systemPrompt_Xena : window.systemPrompt_Xeno;
-            const systemInstruction = baseSystemPrompt + guardrail;
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        system_instruction: { parts: [{ text: systemInstruction }] },
+                        system_instruction: { parts: [{ text: baseSystemPrompt }] },
                         contents: chatHistories[currentChar],
                         generationConfig: { temperature: 0.3, maxOutputTokens: 800 }
                     })
@@ -523,29 +486,14 @@
         // ==========================================
         const renderer = {
             config: { 
-                "xena": { 
-                    "baseScale": 0.9, "baseX": -1, "baseY": 35, 
-                    "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, 
-                    "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, 
-                    "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, 
-                    "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, 
-                    "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" 
-                }, 
-                "xeno": { 
-                    "baseScale": 0.9, "baseX": 0, "baseY": 12, 
-                    "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, 
-                    "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, 
-                    "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, 
-                    "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, 
-                    "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" 
-                } 
+                "xena": { "baseScale": 0.9, "baseX": -1, "baseY": 35, "eyeY": 96, "eyeSpacing": 70, "eyeWidth": 13, "eyeHeight": 13, "eyeLineThickness": 1, "pupilSize": 24, "pupilLeftOffsetX": 2.5, "pupilRightOffsetX": -3, "eyebrowY": -36, "eyebrowLength": 21, "eyebrowAngle": -14, "eyebrowThickness": 3, "mouthY": 145, "mouthWidth": 33.5, "verticalLineLength": 7, "mouthCurve": 9, "mouthOffsetX": 1, "mouthOffsetY": 1.5, "mouthLineThickness": 1.4, "mouthOpenStyle": "smiling" }, 
+                "xeno": { "baseScale": 0.9, "baseX": 0, "baseY": 12, "eyeY": 67, "eyeSpacing": 66, "eyeWidth": 15, "eyeHeight": 15.5, "eyeLineThickness": 1, "pupilSize": 24.2, "pupilLeftOffsetX": 2.5, "pupilLeftOffsetY": 1, "pupilRightOffsetX": -3, "pupilRightOffsetY": 0.5, "eyebrowY": -33, "eyebrowLength": 26, "eyebrowAngle": -16, "eyebrowThickness": 4, "mouthY": 111, "mouthWidth": 29, "verticalLineLength": 7, "mouthCurve": 10, "mouthOffsetX": -1.5, "mouthOffsetY": 1, "mouthLineThickness": 1.6, "mouthOpenStyle": "smiling" } 
             },
             simulation: { mouthOpen: 0, blinkState: 0, blinkTimer: 0, isSpeaking: false, speakIntervalId: null },
             ctx: null, images: { xena: new Image(), xeno: new Image() }, imageLoaded: { xena: false, xeno: false },
             init: function() { 
                 this.ctx = canvasEl.getContext('2d'); 
-                this.images.xena.onload = () => { this.imageLoaded.xena = true; }; 
-                this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; 
+                this.images.xena.onload = () => { this.imageLoaded.xena = true; }; this.images.xeno.onload = () => { this.imageLoaded.xeno = true; }; 
                 this.images.xena.src = "Xena_base.png"; this.images.xeno.src = "Xeno_base.png"; 
                 if('speechSynthesis' in window) { window.speechSynthesis.getVoices(); }
                 this.startLoop(); 
@@ -555,52 +503,35 @@
                 this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; }, 130); 
             },
             stopSpeakingAnim: function() { 
-                this.simulation.isSpeaking = false; clearInterval(this.simulation.speakIntervalId); 
-                this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; 
+                this.simulation.isSpeaking = false; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; 
             },
             startLoop: function() { 
                 let then = performance.now(); const fpsInterval = 1000 / 30;
                 const drawFrame = (now) => { 
-                    requestAnimationFrame(drawFrame); 
-                    const elapsed = now - then;
+                    requestAnimationFrame(drawFrame); const elapsed = now - then;
                     if (elapsed > fpsInterval) {
-                        then = now - (elapsed % fpsInterval);
-                        this.ctx.clearRect(0, 0, 400, 600); 
-                        const breathe = Math.sin(Date.now() / 420) * 3.5; 
-                        this.ctx.save(); this.ctx.translate(200, 300 + breathe); 
+                        then = now - (elapsed % fpsInterval); this.ctx.clearRect(0, 0, 400, 600); 
+                        const breathe = Math.sin(Date.now() / 420) * 3.5; this.ctx.save(); this.ctx.translate(200, 300 + breathe); 
                         if (this.imageLoaded[currentChar] && this.images[currentChar].complete) { 
                             const img = this.images[currentChar]; const cfg = this.config[currentChar]; 
                             const drawWidth = img.width * cfg.baseScale; const drawHeight = img.height * cfg.baseScale; 
                             this.ctx.drawImage(img, -drawWidth/2 + cfg.baseX, -drawHeight/2 + cfg.baseY, drawWidth, drawHeight); 
                         } else { this.drawBackupSilhouette(); } 
                         this.drawVectorEyes(); this.drawVectorEyebrows(); this.drawVectorMouth(); this.ctx.restore(); 
-                        if (!this.simulation.isSpeaking) { 
-                            this.simulation.blinkTimer++; 
-                            if (this.simulation.blinkTimer > 100) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 106) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } 
-                        }
+                        if (!this.simulation.isSpeaking) { this.simulation.blinkTimer++; if (this.simulation.blinkTimer > 100) { this.simulation.blinkState = 1; if (this.simulation.blinkTimer > 106) { this.simulation.blinkState = 0; this.simulation.blinkTimer = 0; } } }
                     }
                 }; 
                 requestAnimationFrame(drawFrame); 
             },
-            drawBackupSilhouette: function() { 
-                this.ctx.save(); this.ctx.beginPath(); this.ctx.arc(0, 40, 110, 0, Math.PI * 2); 
-                this.ctx.fillStyle = currentChar === 'xena' ? "#e2e8f0" : "#fef3c7"; this.ctx.fill(); 
-                this.ctx.strokeStyle = "#94a3b8"; this.ctx.lineWidth = 3; this.ctx.stroke(); this.ctx.restore(); 
-            },
+            drawBackupSilhouette: function() { this.ctx.save(); this.ctx.beginPath(); this.ctx.arc(0, 40, 110, 0, Math.PI * 2); this.ctx.fillStyle = currentChar === 'xena' ? "#e2e8f0" : "#fef3c7"; this.ctx.fill(); this.ctx.strokeStyle = "#94a3b8"; this.ctx.lineWidth = 3; this.ctx.stroke(); this.ctx.restore(); },
             drawVectorEyes: function() { 
                 const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const eyeYOff = cfg.eyeY - 200; 
                 const drawSingleEye = (ex, isLeft) => { 
                     this.ctx.save(); 
-                    if (this.simulation.blinkState === 1) { 
-                        this.ctx.beginPath(); this.ctx.arc(ex, eyeYOff + cfg.eyeHeight * 0.25, cfg.eyeWidth * 0.9, 0.1 * Math.PI, 0.9 * Math.PI, false); 
-                        this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness * 3.5; this.ctx.stroke(); 
-                    } else { 
-                        this.ctx.beginPath(); this.ctx.ellipse(ex, eyeYOff, cfg.eyeWidth, cfg.eyeHeight, 0, 0, Math.PI * 2); 
-                        this.ctx.fillStyle = "#fff"; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness || 1.5; this.ctx.stroke(); 
-                        this.ctx.beginPath(); 
-                        const pw = Math.min(cfg.eyeWidth * 0.85, cfg.pupilSize / 2); 
-                        const px = ex + (isLeft ? (cfg.pupilLeftOffsetX||0) : (cfg.pupilRightOffsetX||0)); 
-                        const py = eyeYOff + (isLeft ? (cfg.pupilLeftOffsetY||0) : (cfg.pupilRightOffsetY||0)); 
+                    if (this.simulation.blinkState === 1) { this.ctx.beginPath(); this.ctx.arc(ex, eyeYOff + cfg.eyeHeight * 0.25, cfg.eyeWidth * 0.9, 0.1 * Math.PI, 0.9 * Math.PI, false); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness * 3.5; this.ctx.stroke(); } 
+                    else { 
+                        this.ctx.beginPath(); this.ctx.ellipse(ex, eyeYOff, cfg.eyeWidth, cfg.eyeHeight, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyeLineThickness || 1.5; this.ctx.stroke(); 
+                        this.ctx.beginPath(); const pw = Math.min(cfg.eyeWidth * 0.85, cfg.pupilSize / 2); const px = ex + (isLeft ? (cfg.pupilLeftOffsetX||0) : (cfg.pupilRightOffsetX||0)); const py = eyeYOff + (isLeft ? (cfg.pupilLeftOffsetY||0) : (cfg.pupilRightOffsetY||0)); 
                         this.ctx.ellipse(px, py, pw, pw, 0, 0, Math.PI * 2); this.ctx.fillStyle = "#1e293b"; this.ctx.fill(); 
                         this.ctx.beginPath(); this.ctx.arc(px - pw*0.35, py - pw*0.35, pw*0.35, 0, Math.PI*2); this.ctx.fillStyle = "#fff"; this.ctx.fill(); 
                     } this.ctx.restore(); 
@@ -608,44 +539,22 @@
             },
             drawVectorEyebrows: function() { 
                 const cfg = this.config[currentChar]; const halfSpacing = cfg.eyeSpacing / 2; const browY = (cfg.eyeY - 200) + cfg.eyebrowY; 
-                const drawBrow = (bx, isLeft) => { 
-                    this.ctx.save(); this.ctx.translate(bx, browY); this.ctx.rotate((cfg.eyebrowAngle * Math.PI / 180) * (isLeft ? 1 : -1)); 
-                    this.ctx.beginPath(); const half = cfg.eyebrowLength / 2; this.ctx.moveTo(-half, isLeft ? -1.5 : 1.5); 
-                    this.ctx.quadraticCurveTo(0, -cfg.eyebrowThickness * 1.5, half, isLeft ? 1.5 : -1.5); 
-                    this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyebrowThickness; this.ctx.lineCap = "round"; this.ctx.stroke(); this.ctx.restore(); 
-                }; drawBrow(-halfSpacing, true); drawBrow(halfSpacing, false); 
+                const drawBrow = (bx, isLeft) => { this.ctx.save(); this.ctx.translate(bx, browY); this.ctx.rotate((cfg.eyebrowAngle * Math.PI / 180) * (isLeft ? 1 : -1)); this.ctx.beginPath(); const half = cfg.eyebrowLength / 2; this.ctx.moveTo(-half, isLeft ? -1.5 : 1.5); this.ctx.quadraticCurveTo(0, -cfg.eyebrowThickness * 1.5, half, isLeft ? 1.5 : -1.5); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.eyebrowThickness; this.ctx.lineCap = "round"; this.ctx.stroke(); this.ctx.restore(); }; 
+                drawBrow(-halfSpacing, true); drawBrow(halfSpacing, false); 
             },
             drawVectorMouth: function() { 
                 const cfg = this.config[currentChar]; this.ctx.save(); this.ctx.translate(cfg.mouthOffsetX || 0, (cfg.mouthY - 200) + (cfg.mouthOffsetY || 0)); 
                 if (this.simulation.mouthOpen > 1.5) { 
                     const mouthW = cfg.mouthWidth * 0.85; const mouthH = this.simulation.mouthOpen; 
-                    if (cfg.verticalLineLength > 0) { 
-                        const upperLipY = cfg.mouthOpenStyle === 'smiling' ? -mouthH * 0.15 : -mouthH; 
-                        if (-cfg.verticalLineLength < upperLipY) { 
-                            this.ctx.beginPath(); this.ctx.moveTo(0, -cfg.verticalLineLength); this.ctx.lineTo(0, upperLipY); 
-                            this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.lineCap = "round"; this.ctx.stroke(); 
-                        } 
-                    } 
+                    if (cfg.verticalLineLength > 0) { const upperLipY = cfg.mouthOpenStyle === 'smiling' ? -mouthH * 0.15 : -mouthH; if (-cfg.verticalLineLength < upperLipY) { this.ctx.beginPath(); this.ctx.moveTo(0, -cfg.verticalLineLength); this.ctx.lineTo(0, upperLipY); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.lineCap = "round"; this.ctx.stroke(); } } 
                     this.ctx.beginPath(); 
-                    if (cfg.mouthOpenStyle === 'smiling') { 
-                        this.ctx.moveTo(-mouthW, -mouthH * 0.15); this.ctx.quadraticCurveTo(0, -mouthH * 0.55, mouthW, -mouthH * 0.15); 
-                        this.ctx.quadraticCurveTo(0, mouthH * 1.55, -mouthW, -mouthH * 0.15); this.ctx.closePath(); 
-                    } else { this.ctx.ellipse(0, 0, mouthW, mouthH, 0, 0, Math.PI * 2); } 
-                    const mouthGrad = this.ctx.createLinearGradient(0, -mouthH, 0, mouthH); mouthGrad.addColorStop(0, "#3b0712"); mouthGrad.addColorStop(1, "#881337"); 
-                    this.ctx.fillStyle = mouthGrad; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.stroke(); 
-                    this.ctx.save(); this.ctx.clip(); this.ctx.beginPath(); 
-                    let tongueY = mouthH * 0.85; let tongueW = mouthW * 0.55; let tongueH = mouthH * 0.45; 
-                    this.ctx.ellipse(0, tongueY, tongueW, tongueH, 0, 0, Math.PI * 2); 
-                    const tongueGrad = this.ctx.createLinearGradient(0, tongueY - tongueH, 0, tongueY + tongueH); 
-                    tongueGrad.addColorStop(0, "#fda4af"); tongueGrad.addColorStop(1, "#f43f5e"); 
-                    this.ctx.fillStyle = tongueGrad; this.ctx.fill(); this.ctx.strokeStyle = "#be123c"; this.ctx.lineWidth = 1.5; this.ctx.stroke(); this.ctx.restore(); 
+                    if (cfg.mouthOpenStyle === 'smiling') { this.ctx.moveTo(-mouthW, -mouthH * 0.15); this.ctx.quadraticCurveTo(0, -mouthH * 0.55, mouthW, -mouthH * 0.15); this.ctx.quadraticCurveTo(0, mouthH * 1.55, -mouthW, -mouthH * 0.15); this.ctx.closePath(); } else { this.ctx.ellipse(0, 0, mouthW, mouthH, 0, 0, Math.PI * 2); } 
+                    const mouthGrad = this.ctx.createLinearGradient(0, -mouthH, 0, mouthH); mouthGrad.addColorStop(0, "#3b0712"); mouthGrad.addColorStop(1, "#881337"); this.ctx.fillStyle = mouthGrad; this.ctx.fill(); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.stroke(); this.ctx.save(); this.ctx.clip(); this.ctx.beginPath(); 
+                    let tongueY = mouthH * 0.85; let tongueW = mouthW * 0.55; let tongueH = mouthH * 0.45; this.ctx.ellipse(0, tongueY, tongueW, tongueH, 0, 0, Math.PI * 2); 
+                    const tongueGrad = this.ctx.createLinearGradient(0, tongueY - tongueH, 0, tongueY + tongueH); tongueGrad.addColorStop(0, "#fda4af"); tongueGrad.addColorStop(1, "#f43f5e"); this.ctx.fillStyle = tongueGrad; this.ctx.fill(); this.ctx.strokeStyle = "#be123c"; this.ctx.lineWidth = 1.5; this.ctx.stroke(); this.ctx.restore(); 
                 } else { 
-                    if (cfg.verticalLineLength > 0) { 
-                        this.ctx.beginPath(); this.ctx.moveTo(0, -cfg.verticalLineLength); this.ctx.lineTo(0, 0); 
-                        this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.lineCap = "round"; this.ctx.stroke(); 
-                    } 
-                    this.ctx.beginPath(); this.ctx.moveTo(-cfg.mouthWidth, -2); this.ctx.quadraticCurveTo(0, cfg.mouthCurve, cfg.mouthWidth, -2); 
-                    this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = (cfg.mouthLineThickness * 1.25) || 2.0; this.ctx.lineCap = "round"; this.ctx.stroke(); 
+                    if (cfg.verticalLineLength > 0) { this.ctx.beginPath(); this.ctx.moveTo(0, -cfg.verticalLineLength); this.ctx.lineTo(0, 0); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = cfg.mouthLineThickness || 1.5; this.ctx.lineCap = "round"; this.ctx.stroke(); } 
+                    this.ctx.beginPath(); this.ctx.moveTo(-cfg.mouthWidth, -2); this.ctx.quadraticCurveTo(0, cfg.mouthCurve, cfg.mouthWidth, -2); this.ctx.strokeStyle = "#1e293b"; this.ctx.lineWidth = (cfg.mouthLineThickness * 1.25) || 2.0; this.ctx.lineCap = "round"; this.ctx.stroke(); 
                 } this.ctx.restore(); 
             }
         };
