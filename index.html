@@ -40,7 +40,6 @@
     <div id="gate-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
         <h1 class="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight flex items-baseline gap-2">
             <span>AX LAB AI Tutor</span>
-            <span class="text-xs md:text-sm font-mono font-normal text-slate-500">v1.3.0</span>
         </h1>
         <div class="w-64 flex flex-col gap-3 mt-8">
             <input type="text" id="gate-name-input" placeholder="대화명을 입력하세요." class="w-full bg-white border-2 border-slate-700 text-slate-900 text-center rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 font-bold shadow-inner" onkeydown="if(event.key==='Enter') enterApp()">
@@ -58,7 +57,6 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <div class="flex items-center gap-2">
                     <h3 class="text-xl font-extrabold text-slate-800">⚙️ 시스템 설정</h3>
-                    <span class="text-[11px] font-mono text-slate-400">v1.3.0</span>
                 </div>
                 <button onclick="closeOptionsModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
@@ -269,9 +267,6 @@
                                 <div id="mic-switch-bg" class="w-6 h-3.5 bg-slate-400 rounded-full relative flex items-center transition-colors">
                                     <div id="mic-switch-knob" class="w-2.5 h-2.5 bg-white rounded-full absolute left-[2px] transition-all"></div>
                                 </div>
-                            </div>
-                            <div id="mic-mode-hint" class="text-[11px] text-slate-500 font-medium hidden md:block">
-                                마이크를 켜면 말하는 내용이 실시간 텍스트로 인식됩니다.
                             </div>
                         </div>
                         
