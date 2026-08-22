@@ -1,0 +1,1 @@
+{"name":"aitutor-migration","version":"1.0.0","scripts":{"dev":"serve . -p 3000","build":"mkdir -p dist && cp -r index.html tuning.js Xena_base.png Xeno_base.png dist/"},"dependencies":{"serve":"^14.2.6"}}
