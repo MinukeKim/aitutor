@@ -80,6 +80,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
                 <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
                 <div class="flex items-center gap-3">
+                    <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-400 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
                     <button onclick="openApiKeyModal()" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all">⚙️ API Key</button>
                 </div>
@@ -506,7 +507,8 @@
             
             const langCode = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
             
-            const audioBase64 = await fetchGoogleTTS(text, null, langCode, 0);
+            // 칩(Quick Reply) 클릭 시 중성적인 초등학생 느낌
+            const audioBase64 = await fetchGoogleTTS(text, 'ko-KR-Wavenet-C', langCode, 6.0, 1.1);
             
             if (audioBase64) {
                 return new Promise((resolve) => {
@@ -550,7 +552,20 @@
             });
         }
 
-        async function fetchGoogleTTS(text, voiceName, langCode, pitch = 0) {
+        async function fetchGoogleTTS(text, voiceName, langCode, pitch = 0, speakingRate = 1.0) {
+            const ttsModelSpan = document.getElementById('current-tts-model');
+            if (ttsModelSpan) {
+                ttsModelSpan.innerText = voiceName || "ko-KR-Wavenet-C";
+                ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors";
+                if (voiceName === 'ko-KR-Wavenet-A') {
+                    ttsModelSpan.classList.add('text-pink-500', 'bg-pink-50');
+                } else if (voiceName === 'en-US-Wavenet-D') {
+                    ttsModelSpan.classList.add('text-blue-500', 'bg-blue-50');
+                } else {
+                    ttsModelSpan.classList.add('text-purple-500', 'bg-purple-50');
+                }
+            }
+
             const apiKey = 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
             
@@ -568,7 +583,7 @@
                     body: JSON.stringify({
                         input: { text: text },
                         voice: voiceConfig,
-                        audioConfig: { audioEncoding: "MP3", pitch: pitch }
+                        audioConfig: { audioEncoding: "MP3", pitch: pitch, speakingRate: speakingRate }
                     })
                 });
                 if (!response.ok) return null;
@@ -600,8 +615,10 @@
 
                 const langCode = currentChar === 'xena' ? 'ko-KR' : 'en-US';
                 const voiceName = currentChar === 'xena' ? 'ko-KR-Wavenet-A' : 'en-US-Wavenet-D';
+                const pitch = currentChar === 'xena' ? 9.0 : 7.0;
+                const rate = currentChar === 'xena' ? 1.15 : 1.1;
                 
-                const audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode);
+                const audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
 
                 if (mySpeechId !== currentSpeechId) break;
 
@@ -705,6 +722,19 @@
         async function setCharacterMode(char, doGreeting = false) {
             cancelCurrentSpeech();
             currentChar = char;
+            
+            const ttsModelSpan = document.getElementById('current-tts-model');
+            if (ttsModelSpan) {
+                const voiceName = char === 'xena' ? 'ko-KR-Wavenet-A' : 'en-US-Wavenet-D';
+                ttsModelSpan.innerText = voiceName;
+                ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors";
+                if (voiceName === 'ko-KR-Wavenet-A') {
+                    ttsModelSpan.classList.add('text-pink-500', 'bg-pink-50');
+                } else if (voiceName === 'en-US-Wavenet-D') {
+                    ttsModelSpan.classList.add('text-blue-500', 'bg-blue-50');
+                }
+            }
+            
             const bubble = document.getElementById('tutor-bubble-container');
             
             bubble.classList.remove('bg-[#fffcf5]', 'bg-[#f4faff]', 'bg-[#ffdddd]');
