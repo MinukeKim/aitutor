@@ -96,15 +96,16 @@ window.systemPrompt_Xena = `
 AX LAB English - Xena (KR) AI Tutor System Instruction
 ================================================================================
 너는 '제노이즈 초등학교' 3학년에 재학 중인 곰 여자아이 '제나(Xena)'야. (선글라스와 데님 셋업 착용)
-사용자(OO)와 제노(Xeno)와는 같은 반 단짝 친구고, 방과 후 'AX LAB English' 수업을 같이 들어.
+사용자(OO)와 제노(Xeno)와는 같은 반 친구고, 방과 후 'AX LAB English' 수업을 같이 들어.
 너는  과학을 좋아해. 영어를 잘하고 싶지만 아직 자신감이 없고, 수줍음이 많아서 영어를 너보다 조금더 잘하고 자신감있는 사용자(OO)가 너와 제노 사이에서 도와주는 브릿지(Bridge) 역할을 하고 있어.
 
 [CRITICAL 대화 및 인성 룰]
 1. 톤앤매너: 우리는 11살 동갑 친구들이야. 대답은 무조건 **반말(해체, 해라체)**로 해. 절대 "~요", "~습니다" 같은 존댓말을 쓰지 마! 
 2. 중복 인사 금지: 우리는 방금 막 인사를 나눴어. 대답할 때 절대 '안녕?', '반가워', '난 제나야' 같은 첫인사나 자기소개를 두 번 반복하지 마. 바로 본론으로 들어가.
-3. 대답은 3문장 이하 한글로 짧게 해 불필요한 수식어(형용사, 부사)는 최소화
-4. 사용자가 처음 대화에서 칩 클릭으로 토픽을 입력하지 않는 경우 이 데이터 내의 정보면 데이터 안에서 우선 답하고 데이터 밖이면 욕설, 선정성 등을 걸러서 질문에 적절한 답을 2~3회 짧게 하고 토픽으로 돌아가라.
-5. 만약 11세치고 설명하기 어려운 질문을 받으면 선생님이나 부모님의 말인척 인용하면서 가급적 쉽게 설명할것.
+3. 답변 길이와 방식: 설명이 필요한 부분은 친절하게 이야기하되, 전체 답변은 3문장 정도로 구성하고 각 문장은 10단어 내외로 간결하게 말해. 불필요한 수식어(형용사, 부사)는 최소화해.
+4. 한글+영어 병기 금지 (괄호 금지): 텍스트에 영어 단어를 괄호 안에 병기하지 마! (예: '피라미드(Pyramid)' -> '피라미드'로만 표기). 데이터에 있는 영단어도 한글로만 읽어서 말해.
+5. 사용자가 처음 대화에서 칩 클릭으로 토픽을 입력하지 않는 경우 이 데이터 내의 정보면 데이터 안에서 우선 답하고 데이터 밖이면 욕설, 선정성 등을 걸러서 질문에 적절한 답을 2~3회 짧게 하고 토픽으로 돌아가라.
+6. 만약 11세치고 설명하기 어려운 질문을 받으면 선생님이나 부모님의 말인척 인용하면서 가급적 쉽게 설명할것.
 
 [출력 포맷 강제] (JSON)
 { "reply": "제나의 대답" }
@@ -162,4 +163,106 @@ window.appConfig = {
       revisit: (name) => `Hi again, ${name}! more questions?`
     }
   }
+};
+
+window.topicState = {
+    current: 0,
+    target: 0,
+    offTopicTurns: 0,
+    completed: new Set()
+};
+
+const TOPIC_NAMES = {
+    1: "제나와 제노 캐릭터 (Xena & Xeno)",
+    2: "AX LAB English 서비스 및 커리큘럼",
+    3: "학습 내용 (이집트/피라미드 등)",
+    4: "체험형 실습 가이드",
+    5: "생성형 AI 툴 가이드 (Canva)"
+};
+
+function updateTopicState(userMessage) {
+    if (!userMessage) return;
+    const text = userMessage.toLowerCase();
+    let detectedTopic = 0;
+
+    if (text.includes('제나') || text.includes('제노') || text.includes('xena') || text.includes('xeno')) detectedTopic = 1;
+    else if (text.includes('ax lab') || text.includes('서비스') || text.includes('프로그램') || text.includes('english') || text.includes('커리큘럼')) detectedTopic = 2;
+    else if (text.includes('내용') || text.includes('배워') || text.includes('이집트') || text.includes('피라미드')) detectedTopic = 3;
+    else if (text.includes('실습') || text.includes('상자') || text.includes('교구') || text.includes('어떻게')) detectedTopic = 4;
+    else if (text.includes('캔바') || text.includes('canva') || text.includes('ai')) detectedTopic = 5;
+
+    if (detectedTopic !== 0) {
+        if (window.topicState.target !== 0 && window.topicState.target !== detectedTopic) {
+            window.topicState.completed.add(window.topicState.target);
+        }
+        window.topicState.current = detectedTopic;
+        window.topicState.target = detectedTopic;
+        window.topicState.offTopicTurns = 0;
+    } else {
+        window.topicState.current = 0;
+        if (window.topicState.target !== 0) {
+            window.topicState.offTopicTurns += 1;
+        }
+    }
+
+    if (typeof window.updateDebugUI === 'function') {
+        window.updateDebugUI(window.topicState);
+    }
+}
+
+function getTopicSteeringPrompt(isEnglish) {
+    let steering = "\n\n[Topic Tracking & Steering]\n";
+    const state = window.topicState;
+    
+    const completedArr = Array.from(state.completed).map(n => `Topic ${n} (${TOPIC_NAMES[n]})`);
+    if (completedArr.length > 0) {
+        steering += isEnglish 
+            ? `CRITICAL: Do NOT talk about these completed topics again to prevent overlap: [${completedArr.join(', ')}].\n`
+            : `CRITICAL: 이미 완료된 토픽들은 중복 방지를 위해 절대 다시 언급하지 마세요: [${completedArr.join(', ')}].\n`;
+    }
+
+    if (state.current !== 0) {
+        const topicName = TOPIC_NAMES[state.current];
+        steering += isEnglish
+            ? `Current Active Topic: Topic ${state.current} [${topicName}]. Focus ONLY on this topic. Provide deep, specific answers strictly within this boundary.\n`
+            : `현재 집중해야 할 토픽: Topic ${state.current} [${topicName}]. 오직 이 주제의 바운더리 안에서만 깊이 있게 대화하고 딴소리하지 마세요.\n`;
+    } else if (state.target !== 0) {
+        const targetName = TOPIC_NAMES[state.target];
+        if (state.offTopicTurns >= 2) {
+             steering += isEnglish
+                ? `The user is off-topic. You MUST gently steer the conversation back to the original topic [${targetName}] at the end of your reply.\n`
+                : `사용자가 잠시 다른 이야기(Topic 0)를 2턴 이상 하고 있습니다. 이번 대답 마지막에 자연스럽게 원래 집중하던 토픽인 [${targetName}](으)로 화제를 다시 돌리는 질문을 던져 복귀시키세요.\n`;
+        } else {
+             steering += isEnglish
+                ? `The user is temporarily off-topic (Topic 0). Answer naturally but keep it brief, waiting to steer back later.\n`
+                : `사용자가 잠시 다른 이야기(Topic 0)를 합니다. 짧게 맞장구만 쳐주고 길게 이야기하지 마세요.\n`;
+        }
+    } else {
+        steering += isEnglish
+            ? `Status: Topic 0 (General conversation). Wait for the user to ask about specific topics.\n`
+            : `상태: Topic 0 (자유 대화). 사용자가 특정 주제를 고를 때까지 가볍게 응대하세요.\n`;
+    }
+    return steering;
+}
+
+window.getSystemPrompt_Xena = function(userMessage, currentUserName) {
+    let prompt = window.systemPrompt_Xena;
+    if (currentUserName) {
+        prompt = prompt.replace(/OO/g, currentUserName);
+    }
+    
+    updateTopicState(userMessage);
+    prompt += getTopicSteeringPrompt(false);
+    return prompt;
+};
+
+window.getSystemPrompt_Xeno = function(userMessage, currentUserName) {
+    let prompt = window.systemPrompt_Xeno;
+    if (currentUserName) {
+        prompt = prompt.replace(/OO/g, currentUserName);
+    }
+    
+    updateTopicState(userMessage);
+    prompt += getTopicSteeringPrompt(true);
+    return prompt;
 };
