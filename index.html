@@ -1,4 +1,4 @@
-<!-- v1.1.1 -->
+<!-- v1.2.0 (Sprint 5.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -27,35 +27,159 @@
         @media (hover: hover) and (pointer: fine) {
             .suggestion-chip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         }
+        .mic-active-input {
+            background-color: #f0fdf4 !important;
+            border-color: #86efac !important;
+            color: #166534 !important;
+        }
     </style>
 </head>
 <body class="min-h-[100dvh] flex flex-col select-none bg-slate-900">
 
     <!-- 초기 Gate Page -->
     <div id="gate-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
-        <h1 class="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">AX LAB AI Tutor</h1>
+        <h1 class="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight flex items-baseline gap-2">
+            <span>AX LAB AI Tutor</span>
+            <span class="text-xs md:text-sm font-mono font-normal text-slate-500">v1.2.0</span>
+        </h1>
         <div class="w-64 flex flex-col gap-3 mt-8">
             <input type="text" id="gate-name-input" placeholder="대화명을 입력하세요." class="w-full bg-white border-2 border-slate-700 text-slate-900 text-center rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 font-bold shadow-inner" onkeydown="if(event.key==='Enter') enterApp()">
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
+        <div class="absolute bottom-6 text-[11px] font-mono text-slate-600">
+            Sprint 5.0 • v1.2.0
+        </div>
     </div>
 
-    <!-- API Key 모달 -->
-    <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-md w-full mx-4">
-            <h3 class="text-2xl font-extrabold text-slate-800 mb-4">API Key 설정</h3>
-            <div class="mb-4">
-                <label class="block text-sm font-bold text-slate-700 mb-1">Gemini API Key</label>
-                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+    <!-- 통합 설정(Options) 모달 -->
+    <div id="options-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-lg w-full mx-4 flex flex-col max-h-[90vh] overflow-hidden">
+            <!-- 모달 상단 헤더 -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">⚙️ 시스템 설정</h3>
+                    <span class="text-[11px] font-mono text-slate-400">v1.2.0</span>
+                </div>
+                <button onclick="closeOptionsModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
-            <div class="mb-6">
-                <label class="block text-sm font-bold text-slate-700 mb-1">Google TTS API Key (Optional)</label>
-                <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
-                <p class="text-[10px] text-slate-500 mt-1 break-keep">깃허브(외부) 배포 시 403 에러가 발생하면, 도메인 제한이 풀린 별도의 TTS API 키를 입력하세요.</p>
+
+            <!-- 모달 탭 메뉴 -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-4 gap-1">
+                <button id="tab-btn-api" onclick="switchOptionsTab('api')" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all">🔑 API Key 연동</button>
+                <button id="tab-btn-tts" onclick="switchOptionsTab('tts')" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">🔊 음성 & TTS 설정</button>
             </div>
-            <div class="flex gap-3">
-                <button onclick="saveApiKey()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md">저장</button>
-                <button onclick="closeApiKeyModal()" class="py-3 px-6 bg-slate-100 text-slate-600 font-bold rounded-xl">닫기</button>
+
+            <!-- 탭 1: API Key 설정 -->
+            <div id="tab-content-api" class="flex flex-col gap-4 overflow-y-auto pr-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Gemini API Key <span class="text-red-500">*</span></label>
+                    <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key (선택사항)</label>
+                    <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[11px] text-slate-500 mt-1 break-keep">외부(GitHub 등) 배포 시 403 에러가 발생할 경우 도메인 제한이 풀린 별도의 TTS 키를 등록하세요.</p>
+                </div>
+            </div>
+
+            <!-- 탭 2: TTS 설정 -->
+            <div id="tab-content-tts" class="hidden flex-col gap-3 overflow-y-auto pr-1 text-xs">
+                <!-- 제나 (KR) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-2">
+                    <div class="flex justify-between items-center border-b border-slate-200/60 pb-1.5">
+                        <span class="text-pink-600 font-extrabold flex items-center gap-1">🌸 제나 (Xena, KR)</span>
+                        <button onclick="testTTS('xena')" class="px-2.5 py-1 bg-pink-100 text-pink-700 hover:bg-pink-200 font-bold rounded-lg text-[11px] transition-colors">테스트 🔊</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
+                            <select id="setting-xena-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
+                                <option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여)</option>
+                                <option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여)</option>
+                                <option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남)</option>
+                                <option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남)</option>
+                                <option value="ko-KR-Neural2-A">ko-KR-Neural2-A (여)</option>
+                                <option value="ko-KR-Neural2-B">ko-KR-Neural2-B (여)</option>
+                                <option value="ko-KR-Neural2-C">ko-KR-Neural2-C (남)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
+                            <input type="number" id="setting-xena-pitch" value="9.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
+                            <input type="number" id="setting-xena-rate" value="1.15" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제노 (EN) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-2">
+                    <div class="flex justify-between items-center border-b border-slate-200/60 pb-1.5">
+                        <span class="text-blue-600 font-extrabold flex items-center gap-1">🦊 제노 (Xeno, EN)</span>
+                        <button onclick="testTTS('xeno')" class="px-2.5 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold rounded-lg text-[11px] transition-colors">테스트 🔊</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
+                            <select id="setting-xeno-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
+                                <option value="en-US-Wavenet-D">en-US-Wavenet-D (남)</option>
+                                <option value="en-US-Wavenet-A">en-US-Wavenet-A (남)</option>
+                                <option value="en-US-Wavenet-B">en-US-Wavenet-B (남)</option>
+                                <option value="en-US-Wavenet-C">en-US-Wavenet-C (여)</option>
+                                <option value="en-US-Wavenet-E">en-US-Wavenet-E (여)</option>
+                                <option value="en-US-Wavenet-F">en-US-Wavenet-F (여)</option>
+                                <option value="en-US-Neural2-A">en-US-Neural2-A (남)</option>
+                                <option value="en-US-Neural2-C">en-US-Neural2-C (여)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
+                            <input type="number" id="setting-xeno-pitch" value="7.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
+                            <input type="number" id="setting-xeno-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사용자 (User) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-2">
+                    <div class="flex justify-between items-center border-b border-slate-200/60 pb-1.5">
+                        <span class="text-purple-600 font-extrabold flex items-center gap-1">👤 사용자 (User)</span>
+                        <button onclick="testTTS('user')" class="px-2.5 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 font-bold rounded-lg text-[11px] transition-colors">테스트 🔊</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
+                            <select id="setting-user-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
+                                <option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여)</option>
+                                <option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여)</option>
+                                <option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남)</option>
+                                <option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남)</option>
+                                <option value="ko-KR-Neural2-A">ko-KR-Neural2-A (여)</option>
+                                <option value="ko-KR-Neural2-B">ko-KR-Neural2-B (여)</option>
+                                <option value="ko-KR-Neural2-C">ko-KR-Neural2-C (남)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
+                            <input type="number" id="setting-user-pitch" value="6.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
+                            <input type="number" id="setting-user-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 하단 액션 버튼 -->
+            <div class="flex gap-2.5 mt-5 pt-3 border-t border-slate-100">
+                <button id="save-options-btn" onclick="saveAllOptions()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md text-xs md:text-sm transition-all">설정 저장 및 적용</button>
+                <button onclick="closeOptionsModal()" class="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs md:text-sm transition-all">닫기</button>
             </div>
         </div>
     </div>
@@ -68,48 +192,23 @@
         </div>
     </div>
 
-    <!-- TTS Setting Panel -->
-    <div id="debug-panel-container" class="fixed bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-auto">
-        <button onclick="document.getElementById('debug-panel-content').classList.toggle('hidden')" class="bg-slate-800 text-white text-[10px] px-3 py-1.5 rounded-full shadow-md hover:bg-slate-700 transition-colors">⚙️ TTS 설정</button>
-        <div id="debug-panel-content" class="bg-slate-900/90 border border-slate-700 text-slate-300 font-mono text-[10px] md:text-xs p-3 rounded-lg shadow-2xl flex flex-col gap-2 backdrop-blur-sm w-72 hidden">
-            <div class="font-bold text-white border-b border-slate-600 pb-1 mb-1">TTS 음색/피치/속도 설정</div>
-            
-            <div class="flex flex-col gap-1">
-                <div class="flex justify-between items-center"><span class="text-pink-400 font-bold">제나 (Xena, KR)</span> <button onclick="testTTS('xena')" class="px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-[10px]">테스트 🔊</button></div>
-                <div class="flex justify-between items-center"><label>음색 (Voice):</label> <select id="setting-xena-voice" class="w-32 bg-slate-800 text-white rounded px-1 outline-none"><option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여성)</option><option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여성)</option><option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남성)</option><option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남성)</option><option value="ko-KR-Neural2-A">ko-KR-Neural2-A (여성)</option><option value="ko-KR-Neural2-B">ko-KR-Neural2-B (여성)</option><option value="ko-KR-Neural2-C">ko-KR-Neural2-C (남성)</option></select></div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xena-pitch" value="9.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xena-rate" value="1.15" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-            </div>
-
-            <div class="flex flex-col gap-1 mt-1">
-                <div class="flex justify-between items-center"><span class="text-blue-400 font-bold">제노 (Xeno, EN)</span> <button onclick="testTTS('xeno')" class="px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-[10px]">테스트 🔊</button></div>
-                <div class="flex justify-between items-center"><label>음색 (Voice):</label> <select id="setting-xeno-voice" class="w-32 bg-slate-800 text-white rounded px-1 outline-none"><option value="en-US-Wavenet-D">en-US-Wavenet-D (남성)</option><option value="en-US-Wavenet-A">en-US-Wavenet-A (남성)</option><option value="en-US-Wavenet-B">en-US-Wavenet-B (남성)</option><option value="en-US-Wavenet-C">en-US-Wavenet-C (여성)</option><option value="en-US-Wavenet-E">en-US-Wavenet-E (여성)</option><option value="en-US-Wavenet-F">en-US-Wavenet-F (여성)</option><option value="en-US-Neural2-A">en-US-Neural2-A (남성)</option><option value="en-US-Neural2-C">en-US-Neural2-C (여성)</option></select></div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xeno-pitch" value="7.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xeno-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-            </div>
-
-            <div class="flex flex-col gap-1 mt-1">
-                <div class="flex justify-between items-center"><span class="text-purple-400 font-bold">사용자 (User)</span> <button onclick="testTTS('user')" class="px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-[10px]">테스트 🔊</button></div>
-                <div class="flex justify-between items-center"><label>음색 (Voice):</label> <select id="setting-user-voice" class="w-32 bg-slate-800 text-white rounded px-1 outline-none"><option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여성)</option><option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여성)</option><option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남성)</option><option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남성)</option><option value="ko-KR-Neural2-A">ko-KR-Neural2-A (여성)</option><option value="ko-KR-Neural2-B">ko-KR-Neural2-B (여성)</option><option value="ko-KR-Neural2-C">ko-KR-Neural2-C (남성)</option></select></div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-user-pitch" value="6.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-user-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-            </div>
-
-            <button id="apply-tts-btn" onclick="applyTTSSettings()" class="mt-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-colors w-full shadow-md">적용하기</button>
-        </div>
-    </div>
-
     <!-- 메인 앱 컨테이너 -->
     <div id="app-container" class="w-full flex-col flex-1 p-6 md:p-12 bg-white hidden">
         <div class="w-full max-w-5xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
             
             <!-- 상단 헤더 -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
-                <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
-                <div class="flex items-center gap-3">
-                    <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-400 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
+                <div class="flex items-baseline gap-2">
+                    <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
+                    <span class="text-xs font-mono font-medium text-slate-400">v1.2.0</span>
+                </div>
+                <div class="flex items-center gap-2 md:gap-3">
+                    <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
-                    <button onclick="openApiKeyModal()" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all">⚙️ API Key</button>
+                    <button onclick="openOptionsModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                        <span>⚙️</span>
+                        <span>옵션</span>
+                    </button>
                 </div>
             </div>
 
@@ -150,21 +249,24 @@
 
                     <!-- 입력창 영역 -->
                     <div class="p-4 md:p-5 rounded-3xl bg-[#bedcfa] border-2 border-slate-100 shadow-sm mt-3 flex flex-col gap-3">
-                        <div class="flex items-center justify-start border-b border-slate-200/60 pb-2">
+                        <div class="flex items-center justify-between border-b border-slate-200/60 pb-2">
                             <div id="mic-toggle-btn" class="flex items-center gap-1.5 bg-slate-200/60 px-3 py-1.5 rounded-xl cursor-pointer select-none transition-all hover:bg-slate-300/60" onclick="toggleMic()">
                                 <span id="mic-status-text" class="text-[11px] font-extrabold text-slate-500 transition-colors">MIC OFF</span>
                                 <div id="mic-switch-bg" class="w-6 h-3.5 bg-slate-400 rounded-full relative flex items-center transition-colors">
                                     <div id="mic-switch-knob" class="w-2.5 h-2.5 bg-white rounded-full absolute left-[2px] transition-all"></div>
                                 </div>
                             </div>
+                            <div id="mic-mode-hint" class="text-[11px] text-slate-500 font-medium hidden md:block">
+                                마이크를 켜면 말하는 내용이 실시간 텍스트로 인식됩니다.
+                            </div>
                         </div>
                         
                         <div class="flex gap-2 items-center">
-                            <div class="flex-1 flex items-center bg-white border-2 border-slate-200 rounded-2xl px-4 py-2 focus-within:border-indigo-500 transition-all shadow-sm">
+                            <div id="user-input-box" class="flex-1 flex items-center bg-white border-2 border-slate-200 rounded-2xl px-4 py-2 focus-within:border-indigo-500 transition-all shadow-sm">
                                 <input type="text" id="user-input" placeholder="메시지를 입력하세요..." class="w-full bg-transparent text-slate-800 text-[18px] md:text-lg py-1 focus:outline-none" onkeydown="if(event.key==='Enter') sendMessage()">
                                 <div id="kbd-indicator" class="ml-2 px-2 py-0.5 text-[10px] font-extrabold rounded bg-slate-100 text-slate-400 transition-colors shrink-0">-</div>
                             </div>
-                            <button id="send-btn" onclick="sendMessage()" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95">보내기</button>
+                            <button id="send-btn" onclick="sendMessage()" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none">보내기</button>
                         </div>
                     </div>
 
@@ -201,6 +303,67 @@
             }
         }
 
+        // --- 옵션 모달(Options Modal) 관리 ---
+        function switchOptionsTab(tab) {
+            const btnApi = document.getElementById('tab-btn-api');
+            const btnTts = document.getElementById('tab-btn-tts');
+            const contentApi = document.getElementById('tab-content-api');
+            const contentTts = document.getElementById('tab-content-tts');
+
+            if (tab === 'api') {
+                btnApi.className = "flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnTts.className = "flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
+                contentApi.classList.remove('hidden');
+                contentTts.classList.add('hidden');
+            } else {
+                btnTts.className = "flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnApi.className = "flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
+                contentTts.classList.remove('hidden');
+                contentTts.classList.add('flex');
+                contentApi.classList.add('hidden');
+            }
+        }
+
+        function openOptionsModal(defaultTab = 'api') {
+            document.getElementById('options-modal').classList.remove('hidden');
+            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
+            document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
+            switchOptionsTab(defaultTab);
+        }
+
+        function closeOptionsModal() {
+            document.getElementById('options-modal').classList.add('hidden');
+        }
+
+        async function saveAllOptions() {
+            // API Key 저장
+            const key = document.getElementById('api-key-input').value.trim();
+            const ttsKey = document.getElementById('tts-api-key-input').value.trim();
+            if (key) localStorage.setItem('gemini_api_key', key); 
+            if (ttsKey) localStorage.setItem('tts_api_key', ttsKey);
+            else localStorage.removeItem('tts_api_key');
+
+            // TTS 세부 세팅 저장
+            const settings = ['xena-voice', 'xena-pitch', 'xena-rate', 'xeno-voice', 'xeno-pitch', 'xeno-rate', 'user-voice', 'user-pitch', 'user-rate'];
+            settings.forEach(id => {
+                const el = document.getElementById(`setting-${id}`);
+                if(el) localStorage.setItem(`tts_setting_${id}`, el.value);
+            });
+
+            const btn = document.getElementById('save-options-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "저장 완료! ✓";
+            btn.classList.replace('bg-indigo-600', 'bg-green-600');
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.replace('bg-green-600', 'bg-indigo-600');
+                closeOptionsModal();
+            }, 800);
+
+            await setCharacterMode(currentChar, true);
+        }
+
         window.testTTS = async function(char) {
             const voice = document.getElementById(`setting-${char}-voice`)?.value;
             const rawPitch = parseFloat(document.getElementById(`setting-${char}-pitch`)?.value || 0);
@@ -225,37 +388,13 @@
                     const audio = new Audio("data:audio/mp3;base64," + audioBase64);
                     audio.play();
                 } else {
-                    alert("TTS 호출 실패! 403 에러인지 확인해주세요.");
+                    alert("TTS 호출 실패! 옵션 창에서 Google TTS API Key를 확인해주세요.");
                 }
             } catch (err) {
                 console.error(err);
             } finally {
                 if (btn) btn.innerText = originalText;
             }
-        }
-
-        window.applyTTSSettings = function() {
-            const btn = document.getElementById('apply-tts-btn');
-            if (!btn) return;
-            
-            // Save to local storage for persistence across reloads/ports
-            const settings = ['xena-voice', 'xena-pitch', 'xena-rate', 'xeno-voice', 'xeno-pitch', 'xeno-rate', 'user-voice', 'user-pitch', 'user-rate'];
-            settings.forEach(id => {
-                const el = document.getElementById(`setting-${id}`);
-                if(el) localStorage.setItem(`tts_setting_${id}`, el.value);
-            });
-
-            const originalText = btn.innerText;
-            btn.innerText = "적용 완료! ✓";
-            btn.classList.replace('bg-indigo-600', 'bg-green-600');
-            btn.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
-            
-            // Optional: You can play a short notification sound or text here if desired
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.replace('bg-green-600', 'bg-indigo-600');
-                btn.classList.replace('hover:bg-green-700', 'hover:bg-indigo-700');
-            }, 1500);
         };
 
         // Debug UI 업데이트 함수
@@ -277,6 +416,7 @@
         const particleCanvas = document.getElementById('particleCanvas');
         const quickRepliesContainer = document.getElementById('quick-replies-container');
         const inputEl = document.getElementById('user-input');
+        const userInputBox = document.getElementById('user-input-box');
         const sendBtn = document.getElementById('send-btn');
         const kbdIndicator = document.getElementById('kbd-indicator');
         const btnXena = document.getElementById('btn-xena');
@@ -305,29 +445,11 @@
 
         function unlockAudioContext() {
             if (isAudioUnlocked) return;
-            try {
-                const ctx = getAudioContext();
-                if (ctx) {
-                    const buffer = ctx.createBuffer(1, 1, 22050);
-                    const source = ctx.createBufferSource();
-                    source.buffer = buffer; source.connect(ctx.destination); source.start(0);
-                    if (ctx.state === 'suspended') ctx.resume();
-                }
-                isAudioUnlocked = true;
-            } catch (e) {}
-        }
-
-        function playTransformSFX() {
-            if (!isSoundOn) return;
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator(); const gain = ctx.createGain();
-                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.2);
-                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.2);
-            } catch (e) {}
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            isAudioUnlocked = true;
         }
 
         function playMicReadySFX() {
@@ -335,18 +457,35 @@
             try {
                 const ctx = getAudioContext();
                 if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
                 const now = ctx.currentTime;
-                const osc = ctx.createOscillator(); const gain = ctx.createGain();
-                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.15, now + 0.05); gain.gain.linearRampToValueAtTime(0, now + 0.15);
-                osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.15);
-            } catch (e) {}
+
+                osc.frequency.setValueAtTime(587.33, now); 
+                osc.frequency.setValueAtTime(880.00, now + 0.08); 
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } catch (e) {
+                console.warn("SFX Error:", e);
+            }
         }
 
         function triggerTransformParticles() {
-            playTransformSFX();
             const ctx = particleCanvas.getContext('2d');
-            let animationFrameId = null; const startTime = performance.now();
+            const startTime = performance.now();
+            let animationFrameId;
             const particles = Array.from({ length: 35 }, () => ({
                 x: 200, y: 300, vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.5) * 14,
                 size: Math.random() * 6 + 3, color: Math.random() > 0.3 ? '#facc15' : '#ffffff', alpha: 1
@@ -375,20 +514,35 @@
                 quickRepliesContainer.style.pointerEvents = 'none';
                 if (isMicOn && recognition) recognition.stop();
             } else if (state === 'speaking') {
-                inputEl.disabled = false; sendBtn.disabled = false; btnXena.disabled = false; btnXeno.disabled = false;
-                quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
-                inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
-                if (isMicOn && recognition) recognition.stop();
-            } else if (state === 'idle') {
-                inputEl.disabled = false; sendBtn.disabled = false; btnXena.disabled = false; btnXeno.disabled = false;
+                btnXena.disabled = false; btnXeno.disabled = false;
                 quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
                 
-                inputEl.focus();
                 if (isMicOn) {
+                    inputEl.readOnly = true;
+                    sendBtn.disabled = true;
+                } else {
+                    inputEl.disabled = false;
+                    inputEl.readOnly = false;
+                    sendBtn.disabled = false;
+                    inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
+                }
+                if (isMicOn && recognition) recognition.stop();
+            } else if (state === 'idle') {
+                btnXena.disabled = false; btnXeno.disabled = false;
+                quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
+                
+                if (isMicOn) {
+                    inputEl.disabled = false;
+                    inputEl.readOnly = true;
+                    sendBtn.disabled = true;
                     playMicReadySFX(); // 마이크 활성화 시그널 (띠링!)
                     if (!isListening) startMic();
-                    else updateMicUI(true, true); // 이미 켜져있다면 UI만 업데이트
+                    else updateMicUI(true, true);
                 } else {
+                    inputEl.disabled = false;
+                    inputEl.readOnly = false;
+                    sendBtn.disabled = false;
+                    inputEl.focus();
                     inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
                 }
             }
@@ -463,7 +617,6 @@
             
             recognition.onend = () => {
                 isListening = false;
-                // 다시 듣기 필요한 상태면 재시작 (스피킹 중이 아니면)
                 if (isMicOn && !window.speechSynthesis.speaking && !inputEl.disabled) {
                     try { recognition.start(); } catch(e){}
                 } else if (!isMicOn) {
@@ -483,7 +636,7 @@
             isMicOn = !isMicOn;
             if (isMicOn) {
                 cancelCurrentSpeech(); // 마이크 켜는 즉시 상대방 음성 합성 중단
-                setUILock('idle');     // UI 상태를 초기화(이 과정에서 startMic 및 띠링 사운드 자동 실행)
+                setUILock('idle');     // UI 상태 초기화
             } else {
                 turnOffMic();
                 setUILock('idle');
@@ -524,13 +677,19 @@
                 micKnob.classList.replace('left-[2px]', 'left-[12px]');
                 micBtn.classList.add('bg-red-50', 'border-red-100');
                 
+                // 백로그 3번: 마이크 온 상태에서는 인풋창을 텍스트 뷰어(readonly)로 전환하고 보내기 버튼 비활성화
+                inputEl.readOnly = true;
+                sendBtn.disabled = true;
+                userInputBox.classList.add('bg-slate-50/90', 'border-red-200');
+
                 if (isActuallyListening && !window.speechSynthesis.speaking) {
                     micText.innerText = "LISTENING...";
                     micText.className = "text-[11px] font-extrabold text-red-600 animate-pulse transition-colors";
-                    inputEl.placeholder = currentChar === 'xena' ? "말씀해주세요, 듣고 있습니다..." : "I'm listening...";
+                    inputEl.placeholder = currentChar === 'xena' ? "듣고 있어요... (말씀하시면 자동으로 전송됩니다)" : "Listening... (Speak to send automatically)";
                 } else {
                     micText.innerText = "MIC ON";
                     micText.className = "text-[11px] font-extrabold text-red-400 transition-colors";
+                    inputEl.placeholder = currentChar === 'xena' ? "마이크 대기 중..." : "Mic standby...";
                 }
             } else {
                 micText.innerText = "MIC OFF";
@@ -538,6 +697,10 @@
                 micBg.classList.replace('bg-red-500', 'bg-slate-400');
                 micKnob.classList.replace('left-[12px]', 'left-[2px]');
                 micBtn.classList.remove('bg-red-50', 'border-red-100');
+                
+                inputEl.readOnly = false;
+                sendBtn.disabled = false;
+                userInputBox.classList.remove('bg-slate-50/90', 'border-red-200');
                 inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
             }
         }
@@ -568,7 +731,7 @@
             document.getElementById('app-container').style.display = 'flex';
 
             const apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) { openApiKeyModal(); return; }
+            if (!apiKey) { openOptionsModal('api'); return; }
 
             const startChar = Math.random() < 0.5 ? 'xena' : 'xeno';
             await setCharacterMode(startChar, true);
@@ -599,11 +762,9 @@
             
             const langCode = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
             
-            // 칩(Quick Reply) 클릭 시 중성적인 초등학생 느낌
             const rawPitch = parseFloat(document.getElementById('setting-user-pitch')?.value || 6.0);
             const rawRate = parseFloat(document.getElementById('setting-user-rate')?.value || 1.1);
             
-            // Google TTS API Limits: Pitch [-20, 20], Rate [0.25, 4.0]
             const pitch = Math.max(-20, Math.min(20, rawPitch));
             const rate = Math.max(0.25, Math.min(4.0, rawRate));
             
@@ -625,7 +786,6 @@
                 if (!('speechSynthesis' in window)) { resolve(); return; }
                 const utterance = new SpeechSynthesisUtterance(text);
                 
-                // 제노(EN) 칩은 무조건 영어 엔진 강제 (한글 1 Concept 포함되더라도 영어 억양으로 발음)
                 utterance.lang = langCode;
                 
                 const voice = getBestVoice(utterance.lang.split('-')[0]);
@@ -641,7 +801,6 @@
                 utterance.onend = safeResolve;
                 utterance.onerror = safeResolve;
                 
-                // 브라우저 버그 방어용 타임아웃
                 const maxWaitTime = (text.length * 250) + 1000;
                 setTimeout(() => {
                     if (!resolved) {
@@ -669,7 +828,6 @@
                 }
             }
 
-            // Use custom TTS key if provided, else fallback to hardcoded
             const customTtsKey = localStorage.getItem('tts_api_key');
             const apiKey = customTtsKey && customTtsKey.length > 20 ? customTtsKey : 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
@@ -730,7 +888,6 @@
                 const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || 7.0);
                 const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || 1.1);
 
-                // Google TTS API Limits: Pitch [-20, 20], Rate [0.25, 4.0]
                 const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
                 const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
                 
@@ -752,7 +909,6 @@
                     };
 
                     if (!audioBase64) {
-                        // Fallback to Web Speech API if Google TTS fails
                         updateTTSBadgeToFallback();
                         if (!('speechSynthesis' in window)) { safeResolve(); return; }
                         const utterance = new SpeechSynthesisUtterance(cleanSentenceForVoice);
@@ -817,7 +973,6 @@
                 const btn = document.createElement('button');
                 btn.innerText = text; btn.className = chipClass;
                 btn.onclick = function() {
-                    // Prevent double clicking / API race conditions
                     quickRepliesContainer.style.pointerEvents = 'none';
                     Array.from(quickRepliesContainer.children).forEach(c => {
                         if (c !== btn) c.style.opacity = '0.5';
@@ -865,13 +1020,13 @@
                 bubble.classList.add('bg-[#ffdddd]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-blue-500 text-white";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
-                sendBtn.innerText = "보내기"; sendBtn.className = "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
+                sendBtn.innerText = "보내기"; sendBtn.className = "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none";
                 inputEl.classList.replace('focus-within:border-orange-500', 'focus-within:border-blue-500');
             } else {
                 bubble.classList.add('bg-[#ffdddd]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-orange-500 text-white";
-                sendBtn.innerText = "Send"; sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
+                sendBtn.innerText = "Send"; sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none";
                 inputEl.classList.replace('focus-within:border-blue-500', 'focus-within:border-orange-500');
             }
             
@@ -880,7 +1035,7 @@
             }
 
             if (doGreeting && window.appConfig) {
-                let greetingMsg = ""; let chips = [];
+                let greetingMsg = "";
                 const configNode = window.appConfig.greetings[char];
                 
                 if (!hasMet[char]) {
@@ -889,51 +1044,29 @@
                     greetingMsg = configNode.revisit(currentUserName);
                 }
                 currentRawText = greetingMsg;
-                // chatHistories[char].push({ role: "model", parts: [{ text: greetingMsg }] }); // 첫 인사를 history에 넣으면 첫 메시지가 model이 되어 API 오류 발생
                 renderSuggestions();
                 await speakText(greetingMsg);
             }
         }
 
-        function openApiKeyModal() { 
-            document.getElementById('apikey-modal').classList.remove('hidden'); 
-            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; 
-            document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
-        }
-        function closeApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
-        async function saveApiKey() {
-            const key = document.getElementById('api-key-input').value.trim();
-            const ttsKey = document.getElementById('tts-api-key-input').value.trim();
-            if (key) localStorage.setItem('gemini_api_key', key); 
-            if (ttsKey) localStorage.setItem('tts_api_key', ttsKey);
-            else localStorage.removeItem('tts_api_key');
-            closeApiKeyModal();
-            await setCharacterMode(currentChar, true); 
-        }
-
         async function resetChat() {
-            // 히스토리 및 상태 초기화
             chatHistories = { xena: [], xeno: [] };
             hasMet = { xena: false, xeno: false };
             tutorText.innerHTML = "<span class='text-slate-400 font-bold'>🔄 프롬프트(tuning.js) 리로드 중...</span>";
             quickRepliesContainer.innerHTML = "";
             cancelCurrentSpeech();
             
-            // 기존 스크립트 태그 제거
             const oldScript = document.getElementById('tuning-script');
             if (oldScript) oldScript.remove();
 
-            // 새 스크립트 태그 생성 및 캐시 무효화 파라미터 추가
             const newScript = document.createElement('script');
             newScript.id = 'tuning-script';
             
-            // 브라우저가 file:// 로컬로 열렸을 때는 쿼리스트링이 파일 경로 탐색 오류를 내므로 분기 처리
             const isLocalFile = window.location.protocol === 'file:';
             newScript.src = 'tuning.js' + (isLocalFile ? '' : ('?v=' + new Date().getTime())); 
             
             newScript.onload = async () => {
                 tutorText.innerHTML = ""; 
-                // 새로 로드된 전역 변수(window.systemPrompt_Xena 등)를 바탕으로 다시 인사
                 await setCharacterMode(currentChar, true);
             };
 
@@ -950,10 +1083,10 @@
             const rawMsg = suggestedText || inputEl.value.trim();
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!rawMsg) return;
-            if (!apiKey) { openApiKeyModal(); return; }
+            if (!apiKey) { openOptionsModal('api'); return; }
 
             setUILock('fetching'); 
-            inputEl.value = ''; // FIX: always clear input early, no need for the redundant `if (!isFromChip)` block.
+            inputEl.value = '';
 
             // 제노의 한국어 입력 시 방어 기제 로직
             if (currentChar === 'xeno' && !isFromChip && /^[가-힣\s\.,!?]+$/.test(rawMsg)) {
@@ -973,23 +1106,19 @@
             }
 
             chatHistories[currentChar].push({ role: "user", parts: [{ text: rawMsg }] });
-            // 히스토리가 너무 길어지면 짝수 개수(user 시작 유지)로 자름
             if (chatHistories[currentChar].length > 10) {
                 let sliceStart = chatHistories[currentChar].length - 10;
                 if (chatHistories[currentChar][sliceStart].role !== 'user') sliceStart += 1;
                 chatHistories[currentChar] = chatHistories[currentChar].slice(sliceStart);
             }
 
-            // 1. API 요청을 병렬로 먼저 시작 (네트워크 지연 시간 활용)
             const apiDataPromise = fetchGeminiDataOnly(rawMsg);
             
-            // 2. 유저 TTS 재생 및 안전 타임아웃 대기 (마이크 입력이 아닐 때만)
             if (!isFromMic) {
                 await speakUserText(rawMsg);
-                await new Promise(resolve => setTimeout(resolve, 300)); // 엔진 클리어 여유 시간
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
             
-            // 3. 브라우저 엔진이 여전히 재생 중이라고 착각한다면 강제로 기다림 (완벽 방어)
             if (window.speechSynthesis) {
                 while (window.speechSynthesis.speaking) {
                     await new Promise(resolve => setTimeout(resolve, 100));
@@ -997,11 +1126,9 @@
             }
             
             quickRepliesContainer.innerHTML = '';
-            // 거칠게 변하던 텍스트 대신 깔끔하고 세련된 Typing Indicator(3-dots bounce)로 교체
             tutorText.innerHTML = `<div class="flex items-center gap-1.5 h-7 opacity-60 ml-2"><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce"></div><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.15s"></div><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></div></div>`;
             kbdIndicator.innerText = '-'; kbdIndicator.className = 'ml-2 px-2 py-0.5 text-[10px] font-extrabold rounded bg-slate-100 text-slate-400 transition-colors shrink-0';
 
-            // 4. 유저 음성이 완벽히 끝난 후, 미리 보내둔 API 응답을 기다림
             const apiData = await apiDataPromise; 
             if (apiData) {
                 currentRawText = apiData.replyText;
@@ -1143,7 +1270,6 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => { 
-            // Load TTS settings from localStorage
             const settings = ['xena-voice', 'xena-pitch', 'xena-rate', 'xeno-voice', 'xeno-pitch', 'xeno-rate', 'user-voice', 'user-pitch', 'user-rate'];
             settings.forEach(id => {
                 const saved = localStorage.getItem(`tts_setting_${id}`);
