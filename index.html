@@ -60,6 +60,18 @@
         </div>
     </div>
 
+    <!-- Debug Panel (Added for Topic Tracking) -->
+    <div id="debug-panel-container" class="fixed bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-auto">
+        <button onclick="document.getElementById('debug-panel-content').classList.toggle('hidden')" class="bg-slate-800 text-white text-[10px] px-3 py-1.5 rounded-full shadow-md hover:bg-slate-700 transition-colors">🔍 Debug</button>
+        <div id="debug-panel-content" class="bg-slate-900/90 border border-slate-700 text-green-400 font-mono text-[10px] md:text-xs p-3 rounded-lg shadow-2xl flex flex-col gap-1 backdrop-blur-sm">
+            <div class="font-bold text-white mb-1">Topic State</div>
+            <div>Current: <span id="debug-current" class="text-white">0</span></div>
+            <div>Target: <span id="debug-target" class="text-white">0</span></div>
+            <div>Off-Topic Turns: <span id="debug-turns" class="text-white">0</span></div>
+            <div>Completed: <span id="debug-completed" class="text-white">[]</span></div>
+        </div>
+    </div>
+
     <!-- 메인 앱 컨테이너 -->
     <div id="app-container" class="w-full flex-col flex-1 p-6 md:p-12 bg-white hidden">
         <div class="w-full max-w-5xl mx-auto flex flex-col flex-1 gap-4 md:gap-6">
@@ -152,6 +164,19 @@
         let micIdleTimer = null;
         let isAudioUnlocked = false; 
         let globalAudioCtx = null;
+
+        // Debug UI 업데이트 함수
+        window.updateDebugUI = function(state) {
+            const currentEl = document.getElementById('debug-current');
+            const targetEl = document.getElementById('debug-target');
+            const turnsEl = document.getElementById('debug-turns');
+            const completedEl = document.getElementById('debug-completed');
+            
+            if (currentEl) currentEl.innerText = state.current;
+            if (targetEl) targetEl.innerText = state.target;
+            if (turnsEl) turnsEl.innerText = state.offTopicTurns;
+            if (completedEl) completedEl.innerText = JSON.stringify(Array.from(state.completed));
+        };
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const tutorText = document.getElementById('tutor-text');
@@ -517,7 +542,7 @@
                 let sentence = sentences[i];
                 if (!sentence) continue;
 
-                let cleanSentenceForVoice = sentence.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/[\[\]]/g, ''); 
+                let cleanSentenceForVoice = sentence.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z\s]+\)/g, '').replace(/[\[\]]/g, ''); 
                 const highlightedHtml = text.replace(sentence, `<span class="highlight">${sentence}</span>`);
                 tutorText.innerHTML = formatUIText(highlightedHtml);
                 tutorBubbleContainer.scrollTop = tutorBubbleContainer.scrollHeight;
@@ -574,6 +599,12 @@
                 const btn = document.createElement('button');
                 btn.innerText = text; btn.className = chipClass;
                 btn.onclick = function() {
+                    // Prevent double clicking / API race conditions
+                    quickRepliesContainer.style.pointerEvents = 'none';
+                    Array.from(quickRepliesContainer.children).forEach(c => {
+                        if (c !== btn) c.style.opacity = '0.5';
+                    });
+
                     if(currentChar === 'xena') {
                         btn.classList.remove('bg-white', 'text-blue-600'); btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
                     } else {
@@ -747,12 +778,9 @@
             const apiKey = localStorage.getItem('gemini_api_key');
             if(!apiKey) return null;
 
-            let baseSystemPrompt = (currentChar === 'xena') ? window.systemPrompt_Xena : window.systemPrompt_Xeno;
-            
-            // 시스템 프롬프트의 'OO'를 실제 입력한 유저 이름으로 치환
-            if (currentUserName) {
-                baseSystemPrompt = baseSystemPrompt.replace(/OO/g, currentUserName);
-            }
+            let baseSystemPrompt = (currentChar === 'xena') 
+                ? window.getSystemPrompt_Xena(userMsg, currentUserName) 
+                : window.getSystemPrompt_Xeno(userMsg, currentUserName);
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
