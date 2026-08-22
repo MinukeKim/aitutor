@@ -1,3 +1,4 @@
+<!-- v1.1.1 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -101,14 +102,14 @@
                         </div>
 
                         <!-- 말풍선 및 칩 -->
-                        <div id="tutor-bubble-container" class="bubble-container p-6 pt-16 md:p-8 md:pt-16 rounded-3xl bg-[#f4faff] border-2 border-slate-100 min-h-[160px] max-h-[320px] overflow-y-auto flex flex-col items-start shadow-sm transition-colors duration-500">
+                        <div id="tutor-bubble-container" class="bubble-container p-6 pt-16 md:p-8 md:pt-16 rounded-3xl bg-[#ffdddd] border-2 border-slate-100 min-h-[160px] max-h-[320px] overflow-y-auto flex flex-col items-start shadow-sm transition-colors duration-500">
                             <div id="tutor-text" class="text-slate-800 font-medium text-[18px] md:text-xl leading-relaxed w-full mb-4"></div>
                             <div id="quick-replies-container" class="flex flex-wrap gap-2 w-full min-h-[36px] transition-opacity duration-300"></div>
                         </div>
                     </div>
 
                     <!-- 입력창 영역 -->
-                    <div class="p-4 md:p-5 rounded-3xl bg-slate-50 border-2 border-slate-100 shadow-sm mt-3 flex flex-col gap-3">
+                    <div class="p-4 md:p-5 rounded-3xl bg-[#bedcfa] border-2 border-slate-100 shadow-sm mt-3 flex flex-col gap-3">
                         <div class="flex items-center justify-start border-b border-slate-200/60 pb-2">
                             <div id="mic-toggle-btn" class="flex items-center gap-1.5 bg-slate-200/60 px-3 py-1.5 rounded-xl cursor-pointer select-none transition-all hover:bg-slate-300/60" onclick="toggleMic()">
                                 <span id="mic-status-text" class="text-[11px] font-extrabold text-slate-500 transition-colors">MIC OFF</span>
@@ -595,17 +596,17 @@
             currentChar = char;
             const bubble = document.getElementById('tutor-bubble-container');
             
-            bubble.classList.remove('bg-[#fffcf5]', 'bg-[#f4faff]');
+            bubble.classList.remove('bg-[#fffcf5]', 'bg-[#f4faff]', 'bg-[#ffdddd]');
             quickRepliesContainer.innerHTML = '';
 
             if (char === 'xena') {
-                bubble.classList.add('bg-[#f4faff]');
+                bubble.classList.add('bg-[#ffdddd]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-blue-500 text-white";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
                 sendBtn.innerText = "보내기"; sendBtn.className = "px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
                 inputEl.classList.replace('focus-within:border-orange-500', 'focus-within:border-blue-500');
             } else {
-                bubble.classList.add('bg-[#fffcf5]');
+                bubble.classList.add('bg-[#ffdddd]');
                 btnXena.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all bg-transparent text-slate-400 hover:bg-slate-200";
                 btnXeno.className = "flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm bg-orange-500 text-white";
                 sendBtn.innerText = "Send"; sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
