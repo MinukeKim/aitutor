@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AX LAB AI Tutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>document.write('<script src="tuning.js?v=' + new Date().getTime() + '"><\/script>');</script>
+    <script>document.write('<script id="tuning-script" src="tuning.js?v=' + new Date().getTime() + '"><\/script>');</script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v3.2.1/dist/web/static/pretendard.css" />
     <style>
         body { font-family: 'Pretendard', system-ui, -apple-system, sans-serif; background-color: #ffffff; color: #334155; }
@@ -19,8 +19,6 @@
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .blink { animation: blink 1.5s infinite; }
         #app-container { display: none; }
         .highlight { background-color: #fef08a; color: #0f172a; border-radius: 4px; padding: 0 2px; transition: background-color 0.2s; }
         .suggestion-chip { transition: all 0.2s ease-in-out; }
@@ -57,7 +55,7 @@
             
             <!-- 상단 헤더 -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
-                <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="window.location.reload()">AX LAB AI Tutor</h1>
+                <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
                 <div class="flex items-center gap-3">
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
                     <button onclick="openApiKeyModal()" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all">⚙️ API Key</button>
@@ -102,10 +100,10 @@
                     <!-- 입력창 영역 -->
                     <div class="p-4 md:p-5 rounded-3xl bg-slate-50 border-2 border-slate-100 shadow-sm mt-3 flex flex-col gap-3">
                         <div class="flex items-center justify-start border-b border-slate-200/60 pb-2">
-                            <div class="flex items-center gap-1.5 bg-slate-200/60 px-3 py-1.5 rounded-xl opacity-60 cursor-not-allowed select-none">
-                                <span class="text-[11px] font-extrabold text-slate-500">MIC OFF</span>
-                                <div class="w-6 h-3.5 bg-slate-400 rounded-full relative flex items-center">
-                                    <div class="w-2.5 h-2.5 bg-white rounded-full absolute left-[2px]"></div>
+                            <div id="mic-toggle-btn" class="flex items-center gap-1.5 bg-slate-200/60 px-3 py-1.5 rounded-xl cursor-pointer select-none transition-all hover:bg-slate-300/60" onclick="toggleMic()">
+                                <span id="mic-status-text" class="text-[11px] font-extrabold text-slate-500 transition-colors">MIC OFF</span>
+                                <div id="mic-switch-bg" class="w-6 h-3.5 bg-slate-400 rounded-full relative flex items-center transition-colors">
+                                    <div id="mic-switch-knob" class="w-2.5 h-2.5 bg-white rounded-full absolute left-[2px] transition-all"></div>
                                 </div>
                             </div>
                         </div>
@@ -133,7 +131,15 @@
         let currentRawText = ""; 
         let currentSpeechId = 0; 
         let currentUserName = ""; 
+        
+        // STT 변수
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isMicOn = false;
+        let isListening = false;
+        let autoSubmitTimer = null;
         let isAudioUnlocked = false; 
+        let globalAudioCtx = null;
 
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const tutorText = document.getElementById('tutor-text');
@@ -157,12 +163,21 @@
             }
         });
 
+        function getAudioContext() {
+            if (!globalAudioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    globalAudioCtx = new AudioCtx();
+                }
+            }
+            return globalAudioCtx;
+        }
+
         function unlockAudioContext() {
             if (isAudioUnlocked) return;
             try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    const ctx = new AudioCtx();
+                const ctx = getAudioContext();
+                if (ctx) {
                     const buffer = ctx.createBuffer(1, 1, 22050);
                     const source = ctx.createBufferSource();
                     source.buffer = buffer; source.connect(ctx.destination); source.start(0);
@@ -175,13 +190,26 @@
         function playTransformSFX() {
             if (!isSoundOn) return;
             try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                const ctx = new AudioCtx(); const now = ctx.currentTime;
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
                 const osc = ctx.createOscillator(); const gain = ctx.createGain();
                 osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.2);
                 gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
                 osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.2);
+            } catch (e) {}
+        }
+
+        function playMicReadySFX() {
+            if (!isSoundOn) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.15, now + 0.05); gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + 0.15);
             } catch (e) {}
         }
 
@@ -215,13 +243,154 @@
             if (state === 'fetching') {
                 inputEl.disabled = true; sendBtn.disabled = true; btnXena.disabled = true; btnXeno.disabled = true;
                 quickRepliesContainer.style.pointerEvents = 'none';
-            } else if (state === 'speaking' || state === 'idle') {
+                if (isMicOn && recognition) recognition.stop();
+            } else if (state === 'speaking') {
                 inputEl.disabled = false; sendBtn.disabled = false; btnXena.disabled = false; btnXeno.disabled = false;
                 quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
                 inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
-                if(state === 'idle') inputEl.focus();
+                if (isMicOn && recognition) recognition.stop();
+            } else if (state === 'idle') {
+                inputEl.disabled = false; sendBtn.disabled = false; btnXena.disabled = false; btnXeno.disabled = false;
+                quickRepliesContainer.style.pointerEvents = 'auto'; quickRepliesContainer.style.opacity = '1';
+                
+                inputEl.focus();
+                if (isMicOn) {
+                    playMicReadySFX(); // 마이크 활성화 시그널 (띠링!)
+                    if (!isListening) startMic();
+                    else updateMicUI(true, true); // 이미 켜져있다면 UI만 업데이트
+                } else {
+                    inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
+                }
             }
         }
+
+        // --- STT 로직 시작 ---
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; 
+            recognition.interimResults = true;
+            
+            recognition.onstart = () => {
+                isListening = true;
+                updateMicUI(true, true);
+            };
+            
+            recognition.onresult = (event) => {
+                if (!isMicOn) return;
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                if (finalTranscript || interimTranscript) {
+                    inputEl.value = finalTranscript + interimTranscript;
+                    
+                    // 침묵 감지 자동 전송
+                    clearTimeout(autoSubmitTimer);
+                    if (finalTranscript) {
+                        const delay = (currentChar === 'xena') ? 900 : 1500;
+                        autoSubmitTimer = setTimeout(() => {
+                            if (isMicOn && !window.speechSynthesis.speaking && inputEl.value.trim() !== "") {
+                                sendMessage(null, false, true);
+                            }
+                        }, delay);
+                    }
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('STT Error:', event.error);
+                if (event.error === 'not-allowed') {
+                    alert('마이크 사용 권한이 차단되었습니다. 브라우저 설정에서 허용해 주세요.');
+                    turnOffMic();
+                }
+            };
+            
+            recognition.onend = () => {
+                isListening = false;
+                // 다시 듣기 필요한 상태면 재시작 (스피킹 중이 아니면)
+                if (isMicOn && !window.speechSynthesis.speaking && !inputEl.disabled) {
+                    try { recognition.start(); } catch(e){}
+                } else if (!isMicOn) {
+                    updateMicUI(false);
+                } else {
+                    updateMicUI(true, false);
+                }
+            };
+        }
+
+        function toggleMic() {
+            if (!recognition) {
+                alert("이 브라우저에서는 음성 인식을 지원하지 않습니다. Chrome을 사용해 주세요.");
+                return;
+            }
+            
+            isMicOn = !isMicOn;
+            if (isMicOn) {
+                cancelCurrentSpeech(); // 마이크 켜는 즉시 상대방 음성 합성 중단
+                setUILock('idle');     // UI 상태를 초기화(이 과정에서 startMic 및 띠링 사운드 자동 실행)
+            } else {
+                turnOffMic();
+                setUILock('idle');
+            }
+        }
+
+        function startMic() {
+            if (!recognition) return;
+            isMicOn = true;
+            recognition.lang = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
+            try {
+                if (!isListening) recognition.start();
+            } catch(e){}
+            updateMicUI(true);
+        }
+
+        function turnOffMic() {
+            isMicOn = false;
+            clearTimeout(autoSubmitTimer);
+            if (recognition) {
+                recognition.stop();
+            }
+            updateMicUI(false);
+        }
+
+        function updateMicUI(active, isActuallyListening = false) {
+            const micBtn = document.getElementById('mic-toggle-btn');
+            const micText = document.getElementById('mic-status-text');
+            const micBg = document.getElementById('mic-switch-bg');
+            const micKnob = document.getElementById('mic-switch-knob');
+            
+            if(!micBtn) return;
+            
+            if (active) {
+                micBg.classList.replace('bg-slate-400', 'bg-red-500');
+                micKnob.classList.replace('left-[2px]', 'left-[12px]');
+                micBtn.classList.add('bg-red-50', 'border-red-100');
+                
+                if (isActuallyListening && !window.speechSynthesis.speaking) {
+                    micText.innerText = "LISTENING...";
+                    micText.className = "text-[11px] font-extrabold text-red-600 animate-pulse transition-colors";
+                    inputEl.placeholder = currentChar === 'xena' ? "말씀해주세요, 듣고 있습니다..." : "I'm listening...";
+                } else {
+                    micText.innerText = "MIC ON";
+                    micText.className = "text-[11px] font-extrabold text-red-400 transition-colors";
+                }
+            } else {
+                micText.innerText = "MIC OFF";
+                micText.className = "text-[11px] font-extrabold text-slate-500 transition-colors";
+                micBg.classList.replace('bg-red-500', 'bg-slate-400');
+                micKnob.classList.replace('left-[12px]', 'left-[2px]');
+                micBtn.classList.remove('bg-red-50', 'border-red-100');
+                inputEl.placeholder = currentChar === 'xena' ? "메시지를 입력하세요..." : "Type your message...";
+            }
+        }
+        // --- STT 로직 끝 ---
 
         function cancelCurrentSpeech() {
             currentSpeechId++; 
@@ -254,7 +423,6 @@
             if (isSoundOn) {
                 knob.style.transform = 'translateX(12px)'; btn.classList.replace('bg-slate-200', 'bg-indigo-600');
                 label.innerText = 'SOUND ON'; label.classList.replace('text-slate-500', 'text-indigo-600');
-                if (currentRawText) { speakText(currentRawText); } 
             } else {
                 knob.style.transform = 'translateX(0)'; btn.classList.replace('bg-indigo-600', 'bg-slate-200');
                 label.innerText = 'SOUND OFF'; label.classList.replace('text-indigo-600', 'text-slate-500');
@@ -280,7 +448,25 @@
                 const voice = getBestVoice(utterance.lang.split('-')[0]);
                 if (voice) utterance.voice = voice;
                 utterance.pitch = 1.15; utterance.rate = 1.0;
-                utterance.onend = () => resolve(); utterance.onerror = () => resolve();
+                
+                let resolved = false;
+                const safeResolve = () => {
+                    if (!resolved) { resolved = true; resolve(); }
+                };
+                
+                utterance.onend = safeResolve;
+                utterance.onerror = safeResolve;
+                
+                // 브라우저 버그 방어용 타임아웃
+                const maxWaitTime = (text.length * 250) + 1000;
+                setTimeout(() => {
+                    if (!resolved) {
+                        console.warn("[TTS Warning] onend timeout, forcing cancel.");
+                        window.speechSynthesis.cancel();
+                        safeResolve();
+                    }
+                }, maxWaitTime);
+
                 window.speechSynthesis.speak(utterance);
             });
         }
@@ -310,9 +496,30 @@
                     const voice = getBestVoice(utterance.lang.split('-')[0]);
                     if (voice) utterance.voice = voice;
                     utterance.rate = currentChar === 'xena' ? 1.0 : 0.9;
-                    utterance.onend = () => { renderer.stopSpeakingAnim(); resolve(); };
-                    utterance.onerror = () => { renderer.stopSpeakingAnim(); resolve(); };
-                    if (mySpeechId === currentSpeechId) window.speechSynthesis.speak(utterance); else resolve();
+                    
+                    let resolved = false;
+                    const safeResolve = () => {
+                        if (!resolved) {
+                            resolved = true;
+                            renderer.stopSpeakingAnim();
+                            resolve();
+                        }
+                    };
+                    
+                    utterance.onend = safeResolve;
+                    utterance.onerror = safeResolve;
+                    
+                    // 브라우저 버그 방어용 타임아웃
+                    const maxWaitTime = (cleanSentenceForVoice.length * 250) + 2000;
+                    setTimeout(() => {
+                        if (!resolved) {
+                            console.warn("[TTS Warning] speakText timeout, forcing cancel.");
+                            window.speechSynthesis.cancel();
+                            safeResolve();
+                        }
+                    }, maxWaitTime);
+
+                    if (mySpeechId === currentSpeechId) window.speechSynthesis.speak(utterance); else safeResolve();
                 });
             }
             if (mySpeechId === currentSpeechId) {
@@ -320,15 +527,17 @@
             }
         }
 
-        function renderSuggestions(suggestionsArr) {
+        function renderSuggestions() {
             quickRepliesContainer.innerHTML = ''; 
+            
+            const suggestionsArr = window.fixedChips ? window.fixedChips[currentChar] : [];
             if (!suggestionsArr || suggestionsArr.length === 0) return;
 
             const chipClass = currentChar === 'xena'
                 ? "suggestion-chip px-3.5 py-2 bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer"
                 : "suggestion-chip px-3.5 py-2 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer";
 
-            suggestionsArr.slice(0, 3).forEach(text => {
+            suggestionsArr.slice(0, 5).forEach(text => {
                 const btn = document.createElement('button');
                 btn.innerText = text; btn.className = chipClass;
                 btn.onclick = function() {
@@ -370,19 +579,23 @@
                 sendBtn.innerText = "Send"; sendBtn.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-md shrink-0 transition-all active:scale-95";
                 inputEl.classList.replace('focus-within:border-blue-500', 'focus-within:border-orange-500');
             }
+            
+            if (recognition) {
+                recognition.lang = (char === 'xena') ? 'ko-KR' : 'en-US';
+            }
 
             if (doGreeting && window.appConfig) {
                 let greetingMsg = ""; let chips = [];
                 const configNode = window.appConfig.greetings[char];
                 
                 if (!hasMet[char]) {
-                    hasMet[char] = true; greetingMsg = configNode.first(currentUserName); chips = configNode.firstChips;
+                    hasMet[char] = true; greetingMsg = configNode.first(currentUserName);
                 } else {
-                    greetingMsg = configNode.revisit(currentUserName); chips = configNode.revisitChips;
+                    greetingMsg = configNode.revisit(currentUserName);
                 }
                 currentRawText = greetingMsg;
-                chatHistories[char].push({ role: "model", parts: [{ text: greetingMsg }] });
-                renderSuggestions(chips);
+                // chatHistories[char].push({ role: "model", parts: [{ text: greetingMsg }] }); // 첫 인사를 history에 넣으면 첫 메시지가 model이 되어 API 오류 발생
+                renderSuggestions();
                 await speakText(greetingMsg);
             }
         }
@@ -395,7 +608,40 @@
             await setCharacterMode(currentChar, true); 
         }
 
-        async function sendMessage(suggestedText = null, isFromChip = false) {
+        async function resetChat() {
+            // 히스토리 및 상태 초기화
+            chatHistories = { xena: [], xeno: [] };
+            hasMet = { xena: false, xeno: false };
+            tutorText.innerHTML = "<span class='text-slate-400 font-bold'>🔄 프롬프트(tuning.js) 리로드 중...</span>";
+            quickRepliesContainer.innerHTML = "";
+            cancelCurrentSpeech();
+            
+            // 기존 스크립트 태그 제거
+            const oldScript = document.getElementById('tuning-script');
+            if (oldScript) oldScript.remove();
+
+            // 새 스크립트 태그 생성 및 캐시 무효화 파라미터 추가
+            const newScript = document.createElement('script');
+            newScript.id = 'tuning-script';
+            
+            // 브라우저가 file:// 로컬로 열렸을 때는 쿼리스트링이 파일 경로 탐색 오류를 내므로 분기 처리
+            const isLocalFile = window.location.protocol === 'file:';
+            newScript.src = 'tuning.js' + (isLocalFile ? '' : ('?v=' + new Date().getTime())); 
+            
+            newScript.onload = async () => {
+                tutorText.innerHTML = ""; 
+                // 새로 로드된 전역 변수(window.systemPrompt_Xena 등)를 바탕으로 다시 인사
+                await setCharacterMode(currentChar, true);
+            };
+
+            newScript.onerror = () => {
+                tutorText.innerHTML = "<span class='text-rose-500 font-bold'>🚨 tuning.js 로드 실패! 경로를 확인해주세요.</span>";
+            };
+
+            document.body.appendChild(newScript);
+        }
+
+        async function sendMessage(suggestedText = null, isFromChip = false, isFromMic = false) {
             unlockAudioContext(); cancelCurrentSpeech();
 
             const rawMsg = suggestedText || inputEl.value.trim();
@@ -404,41 +650,61 @@
             if (!apiKey) { openApiKeyModal(); return; }
 
             setUILock('fetching'); 
-            if (!isFromChip) { inputEl.value = rawMsg; } else { inputEl.value = ''; }
+            inputEl.value = ''; // FIX: always clear input early, no need for the redundant `if (!isFromChip)` block.
 
-            // [백로그 3] 사용자의 100% 한글 타이핑에 대한 제노의 방어 기제 로직 (프론트엔드 보조)
+            // 제노의 한국어 입력 시 방어 기제 로직
             if (currentChar === 'xeno' && !isFromChip && /^[가-힣\s\.,!?]+$/.test(rawMsg)) {
                 chatHistories[currentChar].push({ role: "user", parts: [{ text: rawMsg }] });
                 const defenseMsg = "Oh, I'm sorry. I don't understand Korean yet. Can you teach me in English?";
                 chatHistories[currentChar].push({ role: "model", parts: [{ text: defenseMsg }] });
                 
-                await speakUserText(rawMsg);
-                inputEl.value = ''; quickRepliesContainer.innerHTML = '';
+                if (!isFromMic) {
+                    await speakUserText(rawMsg);
+                }
+                quickRepliesContainer.innerHTML = '';
                 
                 currentRawText = defenseMsg;
-                renderSuggestions(["Sure, I will teach you!", "Okay, no Korean!", "Let's speak English."]);
+                renderSuggestions();
                 await speakText(defenseMsg);
-                return; // API 호출 생략하고 즉시 방어
+                return; 
             }
 
             chatHistories[currentChar].push({ role: "user", parts: [{ text: rawMsg }] });
-            if (chatHistories[currentChar].length > 10) chatHistories[currentChar] = chatHistories[currentChar].slice(-10);
+            // 히스토리가 너무 길어지면 짝수 개수(user 시작 유지)로 자름
+            if (chatHistories[currentChar].length > 10) {
+                let sliceStart = chatHistories[currentChar].length - 10;
+                if (chatHistories[currentChar][sliceStart].role !== 'user') sliceStart += 1;
+                chatHistories[currentChar] = chatHistories[currentChar].slice(sliceStart);
+            }
 
-            const userTTSPromise = speakUserText(rawMsg);
+            // 1. API 요청을 병렬로 먼저 시작 (네트워크 지연 시간 활용)
             const apiDataPromise = fetchGeminiDataOnly(rawMsg);
-
-            await userTTSPromise; await new Promise(resolve => setTimeout(resolve, 500)); 
             
-            inputEl.value = ''; quickRepliesContainer.innerHTML = '';
-            tutorText.innerHTML = `<span class='text-slate-400 animate-pulse'>...</span>`;
+            // 2. 유저 TTS 재생 및 안전 타임아웃 대기 (마이크 입력이 아닐 때만)
+            if (!isFromMic) {
+                await speakUserText(rawMsg);
+                await new Promise(resolve => setTimeout(resolve, 300)); // 엔진 클리어 여유 시간
+            }
+            
+            // 3. 브라우저 엔진이 여전히 재생 중이라고 착각한다면 강제로 기다림 (완벽 방어)
+            if (window.speechSynthesis) {
+                while (window.speechSynthesis.speaking) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            quickRepliesContainer.innerHTML = '';
+            // 거칠게 변하던 텍스트 대신 깔끔하고 세련된 Typing Indicator(3-dots bounce)로 교체
+            tutorText.innerHTML = `<div class="flex items-center gap-1.5 h-7 opacity-60 ml-2"><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce"></div><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.15s"></div><div class="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.3s"></div></div>`;
             kbdIndicator.innerText = '-'; kbdIndicator.className = 'ml-2 px-2 py-0.5 text-[10px] font-extrabold rounded bg-slate-100 text-slate-400 transition-colors shrink-0';
 
+            // 4. 유저 음성이 완벽히 끝난 후, 미리 보내둔 API 응답을 기다림
             const apiData = await apiDataPromise; 
             if (apiData) {
                 currentRawText = apiData.replyText;
                 chatHistories[currentChar].push({ role: "model", parts: [{ text: apiData.replyText }] });
-                renderSuggestions(apiData.suggestionsArr);
-                await speakText(apiData.replyText);
+                renderSuggestions();
+                await speakText(apiData.ttsText || apiData.replyText);
             } else {
                 setUILock('idle');
             }
@@ -448,41 +714,55 @@
             const apiKey = localStorage.getItem('gemini_api_key');
             if(!apiKey) return null;
 
-            const baseSystemPrompt = (currentChar === 'xena') ? window.systemPrompt_Xena : window.systemPrompt_Xeno;
+            let baseSystemPrompt = (currentChar === 'xena') ? window.systemPrompt_Xena : window.systemPrompt_Xeno;
+            
+            // 시스템 프롬프트의 'OO'를 실제 입력한 유저 이름으로 치환
+            if (currentUserName) {
+                baseSystemPrompt = baseSystemPrompt.replace(/OO/g, currentUserName);
+            }
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
                         system_instruction: { parts: [{ text: baseSystemPrompt }] },
                         contents: chatHistories[currentChar],
                         generationConfig: { temperature: 0.3, maxOutputTokens: 800 }
                     })
                 });
-                if (!res.ok) throw new Error();
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`HTTP ${res.status}: ${errorText}`);
+                }
                 const data = await res.json();
                 let rawResponse = data.candidates[0].content.parts[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
 
-                let replyText = ""; let suggestionsArr = [];
+                let replyText = "";
                 try {
                     const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
                     const targetJSON = jsonMatch ? jsonMatch[0] : rawResponse;
                     const parsedData = JSON.parse(targetJSON);
                     replyText = parsedData.reply || targetJSON;
-                    suggestionsArr = parsedData.suggestions || [];
                 } catch (e) { 
                     replyText = rawResponse; 
                 }
 
                 replyText = replyText.replace(/[\*#_`]/g, '').trim();
-                return { replyText, suggestionsArr };
+                return { replyText };
             } catch (e) {
-                return { replyText: "⚠️ 시스템 오류가 발생했습니다.", suggestionsArr: [] };
+                console.error("Gemini API Error:", e);
+                return { 
+                    replyText: "⚠️ 시스템 오류가 발생했습니다. (" + e.message + ")",
+                    ttsText: "구글 서버 응답이 거부되었습니다. 할당량 초과 에러입니다." 
+                };
             }
         }
 
         // ==========================================
-        // 2D CANVAS 렌더링 엔진 (유지)
+        // 2D CANVAS 렌더링 엔진 
         // ==========================================
         const renderer = {
             config: { 
@@ -559,7 +839,13 @@
             }
         };
 
-        window.addEventListener('DOMContentLoaded', () => { renderer.init(); });
+        window.addEventListener('DOMContentLoaded', () => { 
+            renderer.init(); 
+            const savedName = localStorage.getItem('ax_user_name');
+            if (savedName) {
+                document.getElementById('gate-name-input').value = savedName;
+            }
+        });
     </script>
 </body>
 </html>
