@@ -193,6 +193,14 @@
         window.applyTTSSettings = function() {
             const btn = document.getElementById('apply-tts-btn');
             if (!btn) return;
+            
+            // Save to local storage for persistence across reloads/ports
+            const settings = ['xena-pitch', 'xena-rate', 'xeno-pitch', 'xeno-rate', 'user-pitch', 'user-rate'];
+            settings.forEach(id => {
+                const el = document.getElementById(`setting-${id}`);
+                if(el) localStorage.setItem(`tts_setting_${id}`, el.value);
+            });
+
             const originalText = btn.innerText;
             btn.innerText = "적용 완료! ✓";
             btn.classList.replace('bg-indigo-600', 'bg-green-600');
@@ -615,8 +623,8 @@
                 }
             }
 
-            const savedApiKey = localStorage.getItem('gemini_api_key');
-            const apiKey = savedApiKey && savedApiKey.length > 20 ? savedApiKey : 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
+            // Use the dedicated TTS API key. (Gemini keys do NOT have GCP TTS permissions)
+            const apiKey = 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
             
             const voiceConfig = { languageCode: langCode };
@@ -1075,6 +1083,16 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => { 
+            // Load TTS settings from localStorage
+            const settings = ['xena-pitch', 'xena-rate', 'xeno-pitch', 'xeno-rate', 'user-pitch', 'user-rate'];
+            settings.forEach(id => {
+                const saved = localStorage.getItem(`tts_setting_${id}`);
+                if (saved) {
+                    const el = document.getElementById(`setting-${id}`);
+                    if (el) el.value = saved;
+                }
+            });
+
             renderer.init(); 
             const savedName = localStorage.getItem('ax_user_name');
             if (savedName) {
