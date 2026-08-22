@@ -68,21 +68,23 @@
             
             <div class="flex flex-col gap-1">
                 <div class="text-pink-400 font-bold">제나 (Xena, KR)</div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xena-pitch" value="9.0" step="0.5" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xena-rate" value="1.15" step="0.05" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xena-pitch" value="9.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xena-rate" value="1.15" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
             </div>
 
             <div class="flex flex-col gap-1 mt-1">
                 <div class="text-blue-400 font-bold">제노 (Xeno, EN)</div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xeno-pitch" value="7.0" step="0.5" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xeno-rate" value="1.1" step="0.05" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-xeno-pitch" value="7.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-xeno-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
             </div>
 
             <div class="flex flex-col gap-1 mt-1">
                 <div class="text-purple-400 font-bold">사용자 (User)</div>
-                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-user-pitch" value="6.0" step="0.5" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
-                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-user-rate" value="1.1" step="0.05" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>피치 (Pitch):</label> <input type="number" id="setting-user-pitch" value="6.0" step="0.5" min="-20" max="20" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
+                <div class="flex justify-between items-center"><label>속도 (Rate):</label> <input type="number" id="setting-user-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-16 bg-slate-800 text-white rounded px-1 outline-none text-right"></div>
             </div>
+
+            <button id="apply-tts-btn" onclick="applyTTSSettings()" class="mt-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-colors w-full shadow-md">적용하기</button>
         </div>
     </div>
 
@@ -179,6 +181,30 @@
         let micIdleTimer = null;
         let isAudioUnlocked = false; 
         let globalAudioCtx = null;
+
+        function updateTTSBadgeToFallback() {
+            const ttsModelSpan = document.getElementById('current-tts-model');
+            if (ttsModelSpan) {
+                ttsModelSpan.innerText = "Web Speech API (Fallback)";
+                ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors text-orange-600 bg-orange-100";
+            }
+        }
+
+        window.applyTTSSettings = function() {
+            const btn = document.getElementById('apply-tts-btn');
+            if (!btn) return;
+            const originalText = btn.innerText;
+            btn.innerText = "적용 완료! ✓";
+            btn.classList.replace('bg-indigo-600', 'bg-green-600');
+            btn.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
+            
+            // Optional: You can play a short notification sound or text here if desired
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.replace('bg-green-600', 'bg-indigo-600');
+                btn.classList.replace('hover:bg-green-700', 'hover:bg-indigo-700');
+            }, 1500);
+        };
 
         // Debug UI 업데이트 함수
         window.updateDebugUI = function(state) {
@@ -522,8 +548,13 @@
             const langCode = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
             
             // 칩(Quick Reply) 클릭 시 중성적인 초등학생 느낌
-            const pitch = parseFloat(document.getElementById('setting-user-pitch')?.value || 6.0);
-            const rate = parseFloat(document.getElementById('setting-user-rate')?.value || 1.1);
+            const rawPitch = parseFloat(document.getElementById('setting-user-pitch')?.value || 6.0);
+            const rawRate = parseFloat(document.getElementById('setting-user-rate')?.value || 1.1);
+            
+            // Google TTS API Limits: Pitch [-20, 20], Rate [0.25, 4.0]
+            const pitch = Math.max(-20, Math.min(20, rawPitch));
+            const rate = Math.max(0.25, Math.min(4.0, rawRate));
+            
             const audioBase64 = await fetchGoogleTTS(text, 'ko-KR-Wavenet-C', langCode, pitch, rate);
             
             if (audioBase64) {
@@ -536,6 +567,7 @@
             }
 
             return new Promise((resolve) => {
+                updateTTSBadgeToFallback();
                 if (!('speechSynthesis' in window)) { resolve(); return; }
                 const utterance = new SpeechSynthesisUtterance(text);
                 
@@ -544,7 +576,8 @@
                 
                 const voice = getBestVoice(utterance.lang.split('-')[0]);
                 if (voice) utterance.voice = voice;
-                utterance.pitch = 0.9; utterance.rate = 1.0;
+                utterance.pitch = Math.max(0, Math.min(2, 1 + (pitch / 20))); 
+                utterance.rate = Math.max(0.1, Math.min(10, rate));
                 
                 let resolved = false;
                 const safeResolve = () => {
@@ -582,7 +615,8 @@
                 }
             }
 
-            const apiKey = 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
+            const savedApiKey = localStorage.getItem('gemini_api_key');
+            const apiKey = savedApiKey && savedApiKey.length > 20 ? savedApiKey : 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
             
             const voiceConfig = { languageCode: langCode };
@@ -636,8 +670,12 @@
                 const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || 7.0);
                 const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || 1.1);
 
-                const pitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
-                const rate = currentChar === 'xena' ? xenaRate : xenoRate;
+                // Google TTS API Limits: Pitch [-20, 20], Rate [0.25, 4.0]
+                const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
+                const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
+                
+                const pitch = Math.max(-20, Math.min(20, rawPitch));
+                const rate = Math.max(0.25, Math.min(4.0, rawRate));
                 
                 const audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
 
@@ -655,12 +693,14 @@
 
                     if (!audioBase64) {
                         // Fallback to Web Speech API if Google TTS fails
+                        updateTTSBadgeToFallback();
                         if (!('speechSynthesis' in window)) { safeResolve(); return; }
                         const utterance = new SpeechSynthesisUtterance(cleanSentenceForVoice);
                         utterance.lang = langCode;
                         const voice = getBestVoice(langCode.split('-')[0]);
                         if (voice) utterance.voice = voice;
-                        utterance.rate = currentChar === 'xena' ? 1.0 : 0.9;
+                        utterance.pitch = Math.max(0, Math.min(2, 1 + (pitch / 20))); 
+                        utterance.rate = Math.max(0.1, Math.min(10, rate));
                         
                         utterance.onend = safeResolve;
                         utterance.onerror = safeResolve;
