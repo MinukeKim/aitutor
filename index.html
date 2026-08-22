@@ -1,4 +1,4 @@
-<!-- v1.2.0 (Sprint 5.0) -->
+<!-- v1.3.0 (Sprint 6.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -40,14 +40,14 @@
     <div id="gate-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
         <h1 class="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight flex items-baseline gap-2">
             <span>AX LAB AI Tutor</span>
-            <span class="text-xs md:text-sm font-mono font-normal text-slate-500">v1.2.0</span>
+            <span class="text-xs md:text-sm font-mono font-normal text-slate-500">v1.3.0</span>
         </h1>
         <div class="w-64 flex flex-col gap-3 mt-8">
             <input type="text" id="gate-name-input" placeholder="대화명을 입력하세요." class="w-full bg-white border-2 border-slate-700 text-slate-900 text-center rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 font-bold shadow-inner" onkeydown="if(event.key==='Enter') enterApp()">
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
         <div class="absolute bottom-6 text-[11px] font-mono text-slate-600">
-            Sprint 5.0 • v1.2.0
+            Sprint 6.0 • v1.3.0
         </div>
     </div>
 
@@ -58,7 +58,7 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <div class="flex items-center gap-2">
                     <h3 class="text-xl font-extrabold text-slate-800">⚙️ 시스템 설정</h3>
-                    <span class="text-[11px] font-mono text-slate-400">v1.2.0</span>
+                    <span class="text-[11px] font-mono text-slate-400">v1.3.0</span>
                 </div>
                 <button onclick="closeOptionsModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
@@ -78,12 +78,26 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key (선택사항)</label>
                     <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
-                    <p class="text-[11px] text-slate-500 mt-1 break-keep">외부(GitHub 등) 배포 시 403 에러가 발생할 경우 도메인 제한이 풀린 별도의 TTS 키를 등록하세요.</p>
                 </div>
             </div>
 
             <!-- 탭 2: TTS 설정 -->
             <div id="tab-content-tts" class="hidden flex-col gap-3 overflow-y-auto pr-1 text-xs">
+                
+                <div class="bg-white border border-slate-200 rounded-xl p-3 mb-2 shadow-sm flex flex-col gap-2">
+                    <label class="font-bold text-xs text-slate-800">음성 엔진 선택 (유료/무료)</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" name="tts_engine" value="paid" onchange="toggleTTSEngineUI()" checked>
+                            <span class="text-xs font-medium">구글 TTS (유료 API)</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" name="tts_engine" value="free" onchange="toggleTTSEngineUI()">
+                            <span class="text-xs font-medium">기본 기계음 TTS (무료)</span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- 제나 (KR) -->
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-2">
                     <div class="flex justify-between items-center border-b border-slate-200/60 pb-1.5">
@@ -200,14 +214,14 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
-                    <span class="text-xs font-mono font-medium text-slate-400">v1.2.0</span>
+                    <span class="text-xs font-mono font-medium text-slate-400">v1.3.0</span>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
                     <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
                     <button onclick="openOptionsModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
                         <span>⚙️</span>
-                        <span>옵션</span>
+                        <span id="options-btn-text">옵션</span>
                     </button>
                 </div>
             </div>
@@ -328,7 +342,40 @@
             document.getElementById('options-modal').classList.remove('hidden');
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
             document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
+            
+            const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+            const engineRadios = document.getElementsByName('tts_engine');
+            for(let radio of engineRadios) {
+                if(radio.value === engineMode) radio.checked = true;
+            }
+            toggleTTSEngineUI();
+            
             switchOptionsTab(defaultTab);
+        }
+
+        function toggleTTSEngineUI() {
+            let engineMode = 'paid';
+            const engineRadios = document.getElementsByName('tts_engine');
+            for(let radio of engineRadios) {
+                if(radio.checked) engineMode = radio.value;
+            }
+            
+            const isFree = (engineMode === 'free');
+            
+            const settings = ['xena-voice', 'xena-pitch', 'xena-rate', 'xeno-voice', 'xeno-pitch', 'xeno-rate', 'user-voice', 'user-pitch', 'user-rate'];
+            settings.forEach(id => {
+                const el = document.getElementById(`setting-${id}`);
+                if (el) {
+                    el.disabled = isFree;
+                    if (isFree) {
+                        el.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-100');
+                        el.classList.remove('bg-white');
+                    } else {
+                        el.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-100');
+                        el.classList.add('bg-white');
+                    }
+                }
+            });
         }
 
         function closeOptionsModal() {
@@ -342,6 +389,14 @@
             if (key) localStorage.setItem('gemini_api_key', key); 
             if (ttsKey) localStorage.setItem('tts_api_key', ttsKey);
             else localStorage.removeItem('tts_api_key');
+
+            // TTS 엔진 선택 저장
+            let engineMode = 'paid';
+            const engineRadios = document.getElementsByName('tts_engine');
+            for(let radio of engineRadios) {
+                if(radio.checked) engineMode = radio.value;
+            }
+            localStorage.setItem('tts_engine_mode', engineMode);
 
             // TTS 세부 세팅 저장
             const settings = ['xena-voice', 'xena-pitch', 'xena-rate', 'xeno-voice', 'xeno-pitch', 'xeno-rate', 'user-voice', 'user-pitch', 'user-rate'];
@@ -380,6 +435,23 @@
             if (btn) {
                 originalText = btn.innerText;
                 btn.innerText = "⏳";
+            }
+            
+            const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+            
+            if (engineMode === 'free') {
+                updateTTSBadgeToFallback();
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = langCode;
+                    
+                    utterance.onend = () => { if (btn) btn.innerText = originalText; };
+                    utterance.onerror = () => { if (btn) btn.innerText = originalText; };
+                    
+                    window.speechSynthesis.speak(utterance);
+                    return;
+                }
             }
             
             try {
@@ -761,6 +833,7 @@
             if (!isSoundOn || !text) { return; }
             
             const langCode = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
+            const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
             
             const rawPitch = parseFloat(document.getElementById('setting-user-pitch')?.value || 6.0);
             const rawRate = parseFloat(document.getElementById('setting-user-rate')?.value || 1.1);
@@ -768,17 +841,19 @@
             const pitch = Math.max(-20, Math.min(20, rawPitch));
             const rate = Math.max(0.25, Math.min(4.0, rawRate));
             
-            const userVoiceName = document.getElementById('setting-user-voice')?.value || 'ko-KR-Wavenet-C';
-            
-            const audioBase64 = await fetchGoogleTTS(text, userVoiceName, langCode, pitch, rate);
-            
-            if (audioBase64) {
-                return new Promise((resolve) => {
-                    const audio = new Audio("data:audio/mp3;base64," + audioBase64);
-                    audio.onended = resolve;
-                    audio.onerror = resolve;
-                    audio.play().catch(resolve);
-                });
+            if (engineMode === 'paid') {
+                const userVoiceName = document.getElementById('setting-user-voice')?.value || 'ko-KR-Wavenet-C';
+                
+                const audioBase64 = await fetchGoogleTTS(text, userVoiceName, langCode, pitch, rate);
+                
+                if (audioBase64) {
+                    return new Promise((resolve) => {
+                        const audio = new Audio("data:audio/mp3;base64," + audioBase64);
+                        audio.onended = resolve;
+                        audio.onerror = resolve;
+                        audio.play().catch(resolve);
+                    });
+                }
             }
 
             return new Promise((resolve) => {
@@ -870,6 +945,8 @@
 
             const sentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 0) || [text];
             
+            const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+            
             for (let i = 0; i < sentences.length; i++) {
                 if (mySpeechId !== currentSpeechId) break; 
                 let sentence = sentences[i];
@@ -881,20 +958,24 @@
                 tutorBubbleContainer.scrollTop = tutorBubbleContainer.scrollHeight;
 
                 const langCode = currentChar === 'xena' ? 'ko-KR' : 'en-US';
+                
+                let audioBase64 = null;
                 const defaultVoice = currentChar === 'xena' ? 'ko-KR-Wavenet-A' : 'en-US-Wavenet-D';
                 const voiceName = document.getElementById(`setting-${currentChar}-voice`)?.value || defaultVoice;
                 const xenaPitch = parseFloat(document.getElementById('setting-xena-pitch')?.value || 9.0);
                 const xenaRate = parseFloat(document.getElementById('setting-xena-rate')?.value || 1.15);
                 const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || 7.0);
                 const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || 1.1);
-
+                
                 const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
                 const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
                 
                 const pitch = Math.max(-20, Math.min(20, rawPitch));
                 const rate = Math.max(0.25, Math.min(4.0, rawRate));
                 
-                const audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
+                if (engineMode === 'paid') {
+                    audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
+                }
 
                 if (mySpeechId !== currentSpeechId) break;
 
@@ -998,6 +1079,11 @@
         async function setCharacterMode(char, doGreeting = false) {
             cancelCurrentSpeech();
             currentChar = char;
+            
+            const optionsBtnText = document.getElementById('options-btn-text');
+            if (optionsBtnText) {
+                optionsBtnText.innerText = char === 'xeno' ? 'Options' : '옵션';
+            }
             
             const ttsModelSpan = document.getElementById('current-tts-model');
             if (ttsModelSpan) {
