@@ -43,8 +43,16 @@
     <!-- API Key 모달 -->
     <div id="apikey-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-md w-full mx-4">
-            <h3 class="text-2xl font-extrabold text-slate-800 mb-2">API Key 설정</h3>
-            <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-indigo-500">
+            <h3 class="text-2xl font-extrabold text-slate-800 mb-4">API Key 설정</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-slate-700 mb-1">Gemini API Key</label>
+                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-slate-700 mb-1">Google TTS API Key (Optional)</label>
+                <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                <p class="text-[10px] text-slate-500 mt-1 break-keep">깃허브(외부) 배포 시 403 에러가 발생하면, 도메인 제한이 풀린 별도의 TTS API 키를 입력하세요.</p>
+            </div>
             <div class="flex gap-3">
                 <button onclick="saveApiKey()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md">저장</button>
                 <button onclick="closeApiKeyModal()" class="py-3 px-6 bg-slate-100 text-slate-600 font-bold rounded-xl">닫기</button>
@@ -623,8 +631,9 @@
                 }
             }
 
-            // Use the dedicated TTS API key. (Gemini keys do NOT have GCP TTS permissions)
-            const apiKey = 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
+            // Use custom TTS key if provided, else fallback to hardcoded
+            const customTtsKey = localStorage.getItem('tts_api_key');
+            const apiKey = customTtsKey && customTtsKey.length > 20 ? customTtsKey : 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
             
             const voiceConfig = { languageCode: langCode };
@@ -644,11 +653,15 @@
                         audioConfig: { audioEncoding: "MP3", pitch: pitch, speakingRate: speakingRate }
                     })
                 });
-                if (!response.ok) return null;
+                if (!response.ok) {
+                    const errText = await response.text();
+                    console.error("Google TTS HTTP Error:", response.status, errText);
+                    return null;
+                }
                 const data = await response.json();
                 return data.audioContent;
             } catch (err) {
-                console.error("Google TTS Error:", err);
+                console.error("Google TTS Fetch Error:", err);
                 return null;
             }
         }
@@ -843,11 +856,19 @@
             }
         }
 
-        function openApiKeyModal() { document.getElementById('apikey-modal').classList.remove('hidden'); document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; }
+        function openApiKeyModal() { 
+            document.getElementById('apikey-modal').classList.remove('hidden'); 
+            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || ''; 
+            document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
+        }
         function closeApiKeyModal() { document.getElementById('apikey-modal').classList.add('hidden'); }
         async function saveApiKey() {
             const key = document.getElementById('api-key-input').value.trim();
-            if (!key) return; localStorage.setItem('gemini_api_key', key); closeApiKeyModal();
+            const ttsKey = document.getElementById('tts-api-key-input').value.trim();
+            if (key) localStorage.setItem('gemini_api_key', key); 
+            if (ttsKey) localStorage.setItem('tts_api_key', ttsKey);
+            else localStorage.removeItem('tts_api_key');
+            closeApiKeyModal();
             await setCharacterMode(currentChar, true); 
         }
 
