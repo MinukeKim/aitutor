@@ -23,10 +23,12 @@
         .highlight { background-color: #fef08a; color: #0f172a; border-radius: 4px; padding: 0 2px; transition: background-color 0.2s; }
         .suggestion-chip { transition: all 0.2s ease-in-out; }
         .suggestion-chip:active { transform: scale(0.95); }
-        .suggestion-chip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        @media (hover: hover) and (pointer: fine) {
+            .suggestion-chip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col select-none bg-slate-900">
+<body class="min-h-[100dvh] flex flex-col select-none bg-slate-900">
 
     <!-- 초기 Gate Page -->
     <div id="gate-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 text-white">
@@ -46,6 +48,14 @@
                 <button onclick="saveApiKey()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md">저장</button>
                 <button onclick="closeApiKeyModal()" class="py-3 px-6 bg-slate-100 text-slate-600 font-bold rounded-xl">닫기</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 60초 대기(Idle) 모달 -->
+    <div id="idle-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full mx-4 text-center">
+            <h3 class="text-xl font-extrabold text-slate-800 mb-6">거기 계셔요? 🎤</h3>
+            <button onclick="closeIdleModalAndRestartMic()" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-md transition-colors text-lg">확인</button>
         </div>
     </div>
 
@@ -138,6 +148,7 @@
         let isMicOn = false;
         let isListening = false;
         let autoSubmitTimer = null;
+        let micIdleTimer = null;
         let isAudioUnlocked = false; 
         let globalAudioCtx = null;
 
@@ -264,6 +275,23 @@
             }
         }
 
+        function resetMicIdleTimer() {
+            clearTimeout(micIdleTimer);
+            if (isMicOn) {
+                micIdleTimer = setTimeout(() => {
+                    turnOffMic();
+                    document.getElementById('idle-modal').classList.remove('hidden');
+                }, 60000);
+            }
+        }
+
+        function closeIdleModalAndRestartMic() {
+            document.getElementById('idle-modal').classList.add('hidden');
+            if (!isMicOn) {
+                toggleMic();
+            }
+        }
+
         // --- STT 로직 시작 ---
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -277,6 +305,8 @@
             
             recognition.onresult = (event) => {
                 if (!isMicOn) return;
+                resetMicIdleTimer();
+                
                 let finalTranscript = '';
                 let interimTranscript = '';
                 
@@ -344,6 +374,7 @@
         function startMic() {
             if (!recognition) return;
             isMicOn = true;
+            resetMicIdleTimer();
             recognition.lang = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
             try {
                 if (!isListening) recognition.start();
@@ -354,6 +385,7 @@
         function turnOffMic() {
             isMicOn = false;
             clearTimeout(autoSubmitTimer);
+            clearTimeout(micIdleTimer);
             if (recognition) {
                 recognition.stop();
             }
@@ -734,6 +766,9 @@
                     })
                 });
                 if (!res.ok) {
+                    if (res.status === 429) {
+                        throw new Error("API 호출 한도(Quota)를 초과했습니다. 1~2분 뒤에 다시 시도해주세요.");
+                    }
                     const errorText = await res.text();
                     throw new Error(`HTTP ${res.status}: ${errorText}`);
                 }
