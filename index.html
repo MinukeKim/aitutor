@@ -1,4 +1,4 @@
-<!-- v1.3.0 (Sprint 6.0) -->
+<!-- v1.4.0 (Sprint 7.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AX LAB AI Tutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (!localStorage.getItem('tts_engine_mode')) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            localStorage.setItem('tts_engine_mode', isMobile ? 'free' : 'paid');
+        }
+    </script>
     <script>document.write('<script id="tuning-script" src="tuning.js?v=' + new Date().getTime() + '"><\/script>');</script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v3.2.1/dist/web/static/pretendard.css" />
     <style>
@@ -21,8 +27,8 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         #app-container { display: none; }
-        .highlight { background-color: #fef08a; color: #0f172a; border-radius: 4px; padding: 0 2px; transition: background-color 0.2s; }
-        .suggestion-chip { transition: all 0.2s ease-in-out; }
+        .highlight { background-color: #fef08a; border-radius: 4px; padding: 0 2px; transition: background-color 0.2s; }
+        .suggestion-chip { transition: all 0.2s ease-in-out; -webkit-tap-highlight-color: transparent; }
         .suggestion-chip:active { transform: scale(0.95); }
         @media (hover: hover) and (pointer: fine) {
             .suggestion-chip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
@@ -45,8 +51,8 @@
             <input type="text" id="gate-name-input" placeholder="대화명을 입력하세요." class="w-full bg-white border-2 border-slate-700 text-slate-900 text-center rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 font-bold shadow-inner" onkeydown="if(event.key==='Enter') enterApp()">
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
-        <div class="absolute bottom-6 text-[11px] font-mono text-slate-600">
-            Sprint 6.0 • v1.3.0
+        <div class="absolute bottom-6 text-[13px] font-mono text-slate-600">
+            Sprint 7.0 • v1.4.0
         </div>
     </div>
 
@@ -212,14 +218,12 @@
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
-                    <span class="text-xs font-mono font-medium text-slate-400">v1.3.0</span>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
                     <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
                     <span class="text-[11px] md:text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">Gemini 3.1 Flash-Lite</span>
-                    <button onclick="openOptionsModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
-                        <span>⚙️</span>
-                        <span id="options-btn-text">옵션</span>
+                    <button onclick="openOptionsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg md:text-xl rounded-xl transition-all shadow-sm">
+                        ⚙️
                     </button>
                 </div>
             </div>
@@ -572,7 +576,10 @@
         }
 
         function formatUIText(text) {
-            return text.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '<span class="text-rose-600 font-extrabold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm block w-fit my-2">🚨 $1: $2</span>');
+            let formatted = text.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '<span class="text-rose-600 font-extrabold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm block w-fit my-2">🚨 $1: $2</span>');
+            const keywords = /\b(Egypt|countries|country|rivers|river|kings|king|Pharaohs|Pharaoh|built|building|builds|build|pyramids|pyramid|moved|moving|moves|move|stones|stone|secrets|secret)\b/gi;
+            formatted = formatted.replace(keywords, match => `<span class="text-blue-600 font-bold">${match}</span>`);
+            return formatted;
         }
 
         function setUILock(state) {
@@ -1042,8 +1049,8 @@
             if (!suggestionsArr || suggestionsArr.length === 0) return;
 
             const chipClass = currentChar === 'xena'
-                ? "suggestion-chip px-3.5 py-2 bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer"
-                : "suggestion-chip px-3.5 py-2 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer";
+                ? "suggestion-chip px-3.5 py-2 bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 active:bg-blue-100 active:text-blue-800 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer"
+                : "suggestion-chip px-3.5 py-2 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 active:bg-orange-100 active:text-orange-800 rounded-xl text-[13px] md:text-sm font-bold shadow-sm cursor-pointer";
 
             suggestionsArr.slice(0, 5).forEach(text => {
                 const btn = document.createElement('button');
@@ -1074,11 +1081,6 @@
         async function setCharacterMode(char, doGreeting = false) {
             cancelCurrentSpeech();
             currentChar = char;
-            
-            const optionsBtnText = document.getElementById('options-btn-text');
-            if (optionsBtnText) {
-                optionsBtnText.innerText = char === 'xeno' ? 'Options' : '옵션';
-            }
             
             const ttsModelSpan = document.getElementById('current-tts-model');
             if (ttsModelSpan) {
