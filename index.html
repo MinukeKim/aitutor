@@ -1062,9 +1062,11 @@
                     });
 
                     if(currentChar === 'xena') {
-                        btn.classList.remove('bg-white', 'text-blue-600'); btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                        btn.classList.remove('bg-white', 'text-blue-600', 'hover:bg-blue-50', 'active:bg-blue-100', 'active:text-blue-800'); 
+                        btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
                     } else {
-                        btn.classList.remove('bg-white', 'text-orange-600'); btn.classList.add('bg-orange-600', 'text-white', 'border-orange-600');
+                        btn.classList.remove('bg-white', 'text-orange-600', 'hover:bg-orange-50', 'active:bg-orange-100', 'active:text-orange-800'); 
+                        btn.classList.add('bg-orange-600', 'text-white', 'border-orange-600');
                     }
                     setTimeout(() => { sendMessage(text, true); }, 400);
                 };
