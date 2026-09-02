@@ -1,10 +1,10 @@
-<!-- v1.6.0 (Sprint 9.0) -->
+<!-- v1.7.0 (Sprint 10.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AX LAB AI Tutor (Sprint 9.0)</title>
+    <title>AX LAB AI Tutor (Sprint 10.0)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         if (!localStorage.getItem('tts_engine_mode')) {
@@ -52,7 +52,7 @@
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
         <div class="absolute bottom-6 text-[13px] font-mono text-slate-600">
-            Sprint 9.0 • v1.6.0
+            Sprint 10.0 • v1.7.0
         </div>
     </div>
 
@@ -259,7 +259,10 @@
             <!-- 상단 헤더 -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-3">
                 <div class="flex items-baseline gap-2">
-                    <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="resetChat()">AX LAB AI Tutor</h1>
+                    <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-2" onclick="resetChat()">
+                        <span>AX LAB AI Tutor</span>
+                        <span class="text-[10px] md:text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v1.7.0</span>
+                    </h1>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
                     <span id="current-tts-model" class="text-[11px] md:text-xs font-mono font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded transition-colors">ko-KR-Wavenet-A</span>
@@ -276,7 +279,9 @@
                 <!-- 왼쪽 캐릭터 영역 -->
                 <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col items-center gap-3 relative">
                     <div class="flex justify-center w-full relative">
-                        <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10"></canvas>
+                        <!-- 마이크 활성 시 캐릭터 하단 사운드 웨이브 링 -->
+                        <div id="mic-ripple-ring" class="hidden absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-12 bg-red-400/20 rounded-full blur-md animate-ping pointer-events-none"></div>
+                        <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10 transition-all duration-300"></canvas>
                         <canvas id="particleCanvas" width="400" height="600" class="canvas-responsive absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-20"></canvas>
                     </div>
                     <div class="flex w-full max-w-[320px] bg-slate-100 p-1.5 rounded-2xl z-30 shadow-inner">
@@ -915,6 +920,7 @@
             const micText = document.getElementById('mic-status-text');
             const micBg = document.getElementById('mic-switch-bg');
             const micKnob = document.getElementById('mic-switch-knob');
+            const micRipple = document.getElementById('mic-ripple-ring');
             
             if(!micBtn) return;
             
@@ -922,6 +928,7 @@
                 micBg.classList.replace('bg-slate-400', 'bg-red-500');
                 micKnob.classList.replace('left-[2px]', 'left-[12px]');
                 micBtn.classList.add('bg-red-50', 'border-red-100');
+                if (micRipple) micRipple.classList.remove('hidden');
                 
                 // 백로그 3번: 마이크 온 상태에서는 인풋창을 텍스트 뷰어(readonly)로 전환하고 보내기 버튼 비활성화
                 inputEl.readOnly = true;
@@ -943,6 +950,7 @@
                 micBg.classList.replace('bg-red-500', 'bg-slate-400');
                 micKnob.classList.replace('left-[12px]', 'left-[2px]');
                 micBtn.classList.remove('bg-red-50', 'border-red-100');
+                if (micRipple) micRipple.classList.add('hidden');
                 
                 inputEl.readOnly = false;
                 sendBtn.disabled = false;
@@ -1520,9 +1528,19 @@
             startSpeakingAnim: function() { 
                 clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; 
                 this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; }, 130); 
+                if (canvasEl) {
+                    if (currentChar === 'xena') {
+                        canvasEl.style.filter = "drop-shadow(0 0 16px rgba(244, 114, 182, 0.45))";
+                    } else {
+                        canvasEl.style.filter = "drop-shadow(0 0 16px rgba(59, 130, 246, 0.45))";
+                    }
+                }
             },
             stopSpeakingAnim: function() { 
                 this.simulation.isSpeaking = false; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; 
+                if (canvasEl) {
+                    canvasEl.style.filter = "none";
+                }
             },
             startLoop: function() { 
                 let then = performance.now(); const fpsInterval = 1000 / 30;

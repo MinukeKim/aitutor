@@ -1,4 +1,4 @@
-// v1.6.0 (Sprint 9.0)
+// v1.7.0 (Sprint 10.0)
 const commonKnowledge = `
 
 0. 핵심 정체성 (CRITICAL): AX LAB English는 과학 학원이나 과학 프로그램이 절대 아닙니다. 과학을 '소재(재료)'로 삼아 영어를 배우는 '영어 학습 프로그램'임을 절대 명심하세요.
