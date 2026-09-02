@@ -1,4 +1,4 @@
-<!-- v1.7.0 (Sprint 10.0) -->
+<!-- v1.7.2 (Sprint 10.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -261,7 +261,7 @@
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-2" onclick="resetChat()">
                         <span>AX LAB AI Tutor</span>
-                        <span class="text-[10px] md:text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v1.7.0</span>
+                        <span class="text-[10px] md:text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v1.7.2</span>
                     </h1>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
@@ -280,6 +280,7 @@
                 <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col items-center gap-3 relative">
                     <div class="flex justify-center w-full relative">
                         <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10"></canvas>
+                        <canvas id="particleCanvas" width="400" height="600" class="canvas-responsive absolute top-0 left-0 w-full h-full pointer-events-none z-20"></canvas>
                     </div>
                     <div class="flex w-full max-w-[320px] bg-slate-100 p-1.5 rounded-2xl z-30 shadow-inner">
                         <button id="btn-xena" onclick="handleCharacterToggle('xena')" class="flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm">Xena (KR)</button>
@@ -726,7 +727,42 @@
         }
 
         function triggerTransformParticles() {
-            // 시각효과 간소화: 부하 제거를 위해 파티클 애니메이션 비활성화
+            const pCanvas = document.getElementById('particleCanvas');
+            if (!pCanvas) return;
+            const ctx = pCanvas.getContext('2d');
+            if (!ctx) return;
+            
+            const startTime = performance.now();
+            let animationFrameId;
+            const isXena = currentChar === 'xena';
+            const particles = Array.from({ length: 40 }, () => ({
+                x: 200, 
+                y: 280, 
+                vx: (Math.random() - 0.5) * 16, 
+                vy: (Math.random() - 0.5) * 16,
+                size: Math.random() * 5 + 3, 
+                color: isXena ? (Math.random() > 0.4 ? '#f472b6' : '#fbbf24') : (Math.random() > 0.4 ? '#60a5fa' : '#38bdf8'), 
+                alpha: 1
+            }));
+            
+            function drawParticles(now) {
+                const elapsed = now - startTime;
+                if (elapsed >= 650) { ctx.clearRect(0, 0, 400, 600); cancelAnimationFrame(animationFrameId); return; }
+                ctx.clearRect(0, 0, 400, 600);
+                particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    p.alpha = Math.max(0, 1 - elapsed / 650);
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+                animationFrameId = requestAnimationFrame(drawParticles);
+            }
+            animationFrameId = requestAnimationFrame(drawParticles);
         }
 
         function formatUIText(text) {
@@ -823,6 +859,9 @@
                 const combinedTranscript = (finalTranscript + interimTranscript).trim();
                 
                 if (combinedTranscript) {
+                    // 사용자가 말을 시작하면 캐릭터 음성 즉시 중단 (사용자는 언제든 말 끊기 가능)
+                    cancelCurrentSpeech();
+                    
                     inputEl.value = combinedTranscript;
                     
                     // 사용자가 말을 이어가는 중이거나 잠시 쉴 때 성급하게 끊지 않도록 디바운스 대기시간 1.8초로 여유있게 설정
@@ -1382,9 +1421,10 @@
 
             const apiDataPromise = fetchGeminiDataOnly(rawMsg);
             
-            // 사용자 음성 재생을 AI 응답 대기와 병렬로 실행하여 응답 지연(레이턴시) 대폭 단축
+            // 사용자 음성 재생을 AI 응답 대기와 병렬로 실행하되, 캐릭터 발화 전에는 완료를 대기하도록 수정 (음성 겹침 방지)
+            let userAudioPromise = Promise.resolve();
             if (!isFromMic) {
-                speakUserText(rawMsg);
+                userAudioPromise = speakUserText(rawMsg);
             }
             
             quickRepliesContainer.innerHTML = '';
@@ -1415,6 +1455,9 @@
                 currentRawText = cleanReply;
                 chatHistories[currentChar].push({ role: "model", parts: [{ text: cleanReply }] });
                 renderSuggestions();
+                
+                // 사용자의 입력 TTS 재생이 모두 끝날 때까지 대기 후 캐릭터 답변 발화
+                await userAudioPromise;
                 await speakText(cleanReply);
 
                 if (triggerSwitchToXeno && currentChar !== 'xeno') {
