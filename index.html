@@ -726,14 +726,19 @@
             }
         }
 
+        let animationFrameId = null;
+
         function triggerTransformParticles() {
             const pCanvas = document.getElementById('particleCanvas');
             if (!pCanvas) return;
             const ctx = pCanvas.getContext('2d');
             if (!ctx) return;
             
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            
             const startTime = performance.now();
-            let animationFrameId;
             const isXena = currentChar === 'xena';
             const particles = Array.from({ length: 40 }, () => ({
                 x: 200, 
@@ -747,7 +752,11 @@
             
             function drawParticles(now) {
                 const elapsed = now - startTime;
-                if (elapsed >= 650) { ctx.clearRect(0, 0, 400, 600); cancelAnimationFrame(animationFrameId); return; }
+                if (elapsed >= 650) { 
+                    ctx.clearRect(0, 0, 400, 600); 
+                    animationFrameId = null;
+                    return; 
+                }
                 ctx.clearRect(0, 0, 400, 600);
                 particles.forEach(p => {
                     p.x += p.vx; p.y += p.vy;
@@ -864,13 +873,13 @@
                     
                     inputEl.value = combinedTranscript;
                     
-                    // 사용자가 말을 이어가는 중이거나 잠시 쉴 때 성급하게 끊지 않도록 디바운스 대기시간 1.8초로 여유있게 설정
+                    // 사용자가 말을 이어가는 중이거나 잠시 쉴 때 성급하게 끊지 않도록 디바운스 대기시간 1.0초로 설정 (반응성 개선)
                     clearTimeout(autoSubmitTimer);
                     autoSubmitTimer = setTimeout(() => {
                         if (isMicOn && !window.speechSynthesis.speaking && !currentAudio && inputEl.value.trim() !== "") {
                             sendMessage(null, false, true);
                         }
-                    }, 1800);
+                    }, 1000);
                 }
             };
             
