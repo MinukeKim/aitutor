@@ -1124,34 +1124,48 @@
             
             const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
             
+            const langCode = currentChar === 'xena' ? 'ko-KR' : 'en-US';
+            const defaultVoice = currentChar === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
+            const voiceName = document.getElementById(`setting-${currentChar}-voice`)?.value || localStorage.getItem(`tts_setting_${currentChar}-voice`) || defaultVoice;
+            const xenaPitch = parseFloat(document.getElementById('setting-xena-pitch')?.value || localStorage.getItem('tts_setting_xena-pitch') || 4.0);
+            const xenaRate = parseFloat(document.getElementById('setting-xena-rate')?.value || localStorage.getItem('tts_setting_xena-rate') || 1.20);
+            const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || localStorage.getItem('tts_setting_xeno-pitch') || 4.0);
+            const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || localStorage.getItem('tts_setting_xeno-rate') || 1.00);
+            
+            const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
+            const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
+            
+            const pitch = Math.max(-20, Math.min(20, rawPitch));
+            const rate = Math.max(0.25, Math.min(4.0, rawRate));
+
+            // 문장별 TTS 오디오 프리페치 맵 (다음 문장 TTS를 미리 로드하여 딜레이/끊김 현상 제거)
+            const prefetchPromises = [];
+            if (engineMode === 'paid' && getEffectiveTTSKey()) {
+                sentences.forEach((s, idx) => {
+                    const cleanText = s.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z0-9\s.,!?'-]+\)/g, '').replace(/[\[\]]/g, '').trim();
+                    if (cleanText) {
+                        prefetchPromises[idx] = fetchGoogleTTS(cleanText, voiceName, langCode, pitch, rate);
+                    }
+                });
+            }
+
             for (let i = 0; i < sentences.length; i++) {
                 if (mySpeechId !== currentSpeechId) break; 
                 let sentence = sentences[i];
                 if (!sentence) continue;
 
-                let cleanSentenceForVoice = sentence.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z0-9\s.,!?'-]+\)/g, '').replace(/[\[\]]/g, ''); 
+                let cleanSentenceForVoice = sentence.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z0-9\s.,!?'-]+\)/g, '').replace(/[\[\]]/g, '').trim(); 
                 const highlightedHtml = text.replace(sentence, `<span class="highlight">${sentence}</span>`);
                 tutorText.innerHTML = formatUIText(highlightedHtml);
                 tutorBubbleContainer.scrollTop = tutorBubbleContainer.scrollHeight;
 
-                const langCode = currentChar === 'xena' ? 'ko-KR' : 'en-US';
-                
                 let audioBase64 = null;
-                const defaultVoice = currentChar === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
-                const voiceName = document.getElementById(`setting-${currentChar}-voice`)?.value || localStorage.getItem(`tts_setting_${currentChar}-voice`) || defaultVoice;
-                const xenaPitch = parseFloat(document.getElementById('setting-xena-pitch')?.value || localStorage.getItem('tts_setting_xena-pitch') || 4.0);
-                const xenaRate = parseFloat(document.getElementById('setting-xena-rate')?.value || localStorage.getItem('tts_setting_xena-rate') || 1.20);
-                const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || localStorage.getItem('tts_setting_xeno-pitch') || 4.0);
-                const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || localStorage.getItem('tts_setting_xeno-rate') || 1.00);
-                
-                const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
-                const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
-                
-                const pitch = Math.max(-20, Math.min(20, rawPitch));
-                const rate = Math.max(0.25, Math.min(4.0, rawRate));
-                
                 if (engineMode === 'paid') {
-                    audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
+                    if (prefetchPromises[i]) {
+                        audioBase64 = await prefetchPromises[i];
+                    } else {
+                        audioBase64 = await fetchGoogleTTS(cleanSentenceForVoice, voiceName, langCode, pitch, rate);
+                    }
                 }
 
                 if (mySpeechId !== currentSpeechId) break;
@@ -1382,15 +1396,9 @@
 
             const apiDataPromise = fetchGeminiDataOnly(rawMsg);
             
+            // 사용자 음성 재생을 AI 응답 대기와 병렬로 실행하여 응답 지연(레이턴시) 대폭 단축
             if (!isFromMic) {
-                await speakUserText(rawMsg);
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-            
-            if (window.speechSynthesis) {
-                while (window.speechSynthesis.speaking) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
+                speakUserText(rawMsg);
             }
             
             quickRepliesContainer.innerHTML = '';
