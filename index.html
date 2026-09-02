@@ -80,9 +80,8 @@
                     <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key (기본 키 자동 제공 중)</label>
-                    <input type="password" id="tts-api-key-input" placeholder="시스템 기본 키 사용 중 (개별 키 입력 시 덮어쓰기)" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500" oninput="updateTTSKeyStatusUI()">
-                    <p id="tts-key-status" class="text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1">🟢 시스템 기본 구글 TTS 키로 자동 연결되어 있습니다. (별도 입력 불필요)</p>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key</label>
+                    <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
                 </div>
             </div>
 
@@ -92,15 +91,16 @@
                 <div class="bg-white border border-slate-200 rounded-xl p-3 mb-2 shadow-sm flex flex-col gap-2">
                     <label class="font-bold text-xs text-slate-800">음성 엔진 선택 (유료/무료)</label>
                     <div class="flex gap-4">
-                        <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="radio" name="tts_engine" value="paid" onchange="toggleTTSEngineUI()" checked>
+                        <label id="label-tts-paid" class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" id="radio-tts-paid" name="tts_engine" value="paid" onchange="toggleTTSEngineUI()" checked>
                             <span class="text-xs font-medium">구글 TTS (유료 API)</span>
                         </label>
-                        <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="radio" name="tts_engine" value="free" onchange="toggleTTSEngineUI()">
+                        <label id="label-tts-free" class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" id="radio-tts-free" name="tts_engine" value="free" onchange="toggleTTSEngineUI()">
                             <span class="text-xs font-medium">기본 기계음 TTS (무료)</span>
                         </label>
                     </div>
+                    <p id="tts-engine-notice" class="text-[11px] text-amber-600 font-medium hidden">⚠️ Google TTS 키가 등록되지 않아 무료 기계음 모드로 작동합니다. (API Key 연동 탭에서 키를 등록하면 유료 Wavenet 음성을 사용할 수 있습니다)</p>
                 </div>
 
                 <!-- 제나 (KR) -->
@@ -295,6 +295,7 @@
 
     <!-- 스크립트 영역 -->
     <script>
+        const DEFAULT_TTS_KEY = 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
         let currentChar = 'xena';
         let chatHistories = { xena: [], xeno: [] };
         let hasMet = { xena: false, xeno: false };
@@ -342,23 +343,34 @@
             }
         }
 
-        function updateTTSKeyStatusUI() {
-            const ttsKey = document.getElementById('tts-api-key-input')?.value.trim();
-            const statusEl = document.getElementById('tts-key-status');
-            if (!statusEl) return;
-            if (ttsKey && ttsKey.length > 20) {
-                statusEl.innerText = "🔵 사용자 지정 Google TTS 키가 적용 중입니다.";
-                statusEl.className = "text-[11px] text-blue-600 font-bold mt-1.5 flex items-center gap-1";
+        function getEffectiveTTSKey() {
+            return localStorage.getItem('tts_api_key') || (typeof DEFAULT_TTS_KEY !== 'undefined' ? DEFAULT_TTS_KEY : '');
+        }
+
+        function checkTTSKeyAvailability() {
+            const hasKey = !!getEffectiveTTSKey();
+            const paidRadio = document.getElementById('radio-tts-paid');
+            const freeRadio = document.getElementById('radio-tts-free');
+            const paidLabel = document.getElementById('label-tts-paid');
+            const notice = document.getElementById('tts-engine-notice');
+
+            if (!hasKey) {
+                if (paidRadio) { paidRadio.disabled = true; paidRadio.checked = false; }
+                if (freeRadio) freeRadio.checked = true;
+                if (paidLabel) paidLabel.classList.add('opacity-40', 'cursor-not-allowed');
+                if (notice) notice.classList.remove('hidden');
             } else {
-                statusEl.innerText = "🟢 시스템 기본 구글 TTS 키로 자동 연결되어 있습니다. (별도 입력 불필요)";
-                statusEl.className = "text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1";
+                if (paidRadio) paidRadio.disabled = false;
+                if (paidLabel) paidLabel.classList.remove('opacity-40', 'cursor-not-allowed');
+                if (notice) notice.classList.add('hidden');
             }
+            return hasKey;
         }
 
         function openOptionsModal(defaultTab = 'api') {
             document.getElementById('options-modal').classList.remove('hidden');
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
-            document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
+            document.getElementById('tts-api-key-input').value = getEffectiveTTSKey();
             
             // TTS 세부 세팅 불러오기 (기본값 설정)
             document.getElementById('setting-xena-voice').value = localStorage.getItem('tts_setting_xena-voice') || 'ko-KR-Wavenet-B';
@@ -373,13 +385,15 @@
             document.getElementById('setting-user-pitch').value = localStorage.getItem('tts_setting_user-pitch') || '0.0';
             document.getElementById('setting-user-rate').value = localStorage.getItem('tts_setting_user-rate') || '1.00';
 
-            const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+            const hasKey = checkTTSKeyAvailability();
+            let engineMode = localStorage.getItem('tts_engine_mode') || (hasKey ? 'paid' : 'free');
+            if (!hasKey) engineMode = 'free';
+
             const engineRadios = document.getElementsByName('tts_engine');
             for(let radio of engineRadios) {
                 if(radio.value === engineMode) radio.checked = true;
             }
             toggleTTSEngineUI();
-            updateTTSKeyStatusUI();
             switchOptionsTab(defaultTab);
         }
 
@@ -458,11 +472,13 @@
             else localStorage.removeItem('tts_api_key');
 
             // TTS 엔진 선택 저장
-            let engineMode = 'paid';
+            const hasKey = !!getEffectiveTTSKey();
+            let engineMode = hasKey ? 'paid' : 'free';
             const engineRadios = document.getElementsByName('tts_engine');
             for(let radio of engineRadios) {
                 if(radio.checked) engineMode = radio.value;
             }
+            if (!hasKey) engineMode = 'free';
             localStorage.setItem('tts_engine_mode', engineMode);
 
             // TTS 세부 세팅 저장
@@ -980,8 +996,11 @@
                 }
             }
 
-            const customTtsKey = localStorage.getItem('tts_api_key');
-            const apiKey = customTtsKey && customTtsKey.length > 20 ? customTtsKey : 'AIzaSyBkSYEF-5M4OtVZXzOXyxM_QwQ0pdlYfY8';
+            const apiKey = getEffectiveTTSKey();
+            if (!apiKey) {
+                console.warn("No TTS API Key found. Fallback to Web Speech.");
+                return null;
+            }
             const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
             
             const voiceConfig = { languageCode: langCode };
