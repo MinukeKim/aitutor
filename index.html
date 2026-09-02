@@ -1,4 +1,4 @@
-<!-- v1.4.0 (Sprint 7.0) -->
+<!-- v1.5.0 (Sprint 8.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -52,7 +52,7 @@
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
         <div class="absolute bottom-6 text-[13px] font-mono text-slate-600">
-            Sprint 7.0 • v1.4.0
+            Sprint 8.0 • v1.5.0
         </div>
     </div>
 
@@ -80,8 +80,9 @@
                     <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key (선택사항)</label>
-                    <input type="password" id="tts-api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Google TTS API Key (기본 키 자동 제공 중)</label>
+                    <input type="password" id="tts-api-key-input" placeholder="시스템 기본 키 사용 중 (개별 키 입력 시 덮어쓰기)" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs md:text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500" oninput="updateTTSKeyStatusUI()">
+                    <p id="tts-key-status" class="text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1">🟢 시스템 기본 구글 TTS 키로 자동 연결되어 있습니다. (별도 입력 불필요)</p>
                 </div>
             </div>
 
@@ -112,8 +113,8 @@
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
                             <select id="setting-xena-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
+                                <option value="ko-KR-Wavenet-B" selected>ko-KR-Wavenet-B (여)</option>
                                 <option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여)</option>
-                                <option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여)</option>
                                 <option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남)</option>
                                 <option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남)</option>
                                 <option value="ko-KR-Neural2-A">ko-KR-Neural2-A (여)</option>
@@ -123,11 +124,11 @@
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
-                            <input type="number" id="setting-xena-pitch" value="9.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-xena-pitch" value="4.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
-                            <input type="number" id="setting-xena-rate" value="1.15" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-xena-rate" value="1.20" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                     </div>
                 </div>
@@ -142,7 +143,7 @@
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
                             <select id="setting-xeno-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
-                                <option value="en-US-Wavenet-D">en-US-Wavenet-D (남)</option>
+                                <option value="en-US-Wavenet-D" selected>en-US-Wavenet-D (남)</option>
                                 <option value="en-US-Wavenet-A">en-US-Wavenet-A (남)</option>
                                 <option value="en-US-Wavenet-B">en-US-Wavenet-B (남)</option>
                                 <option value="en-US-Wavenet-C">en-US-Wavenet-C (여)</option>
@@ -154,11 +155,11 @@
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
-                            <input type="number" id="setting-xeno-pitch" value="7.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-xeno-pitch" value="4.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
-                            <input type="number" id="setting-xeno-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-xeno-rate" value="1.00" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                     </div>
                 </div>
@@ -173,7 +174,7 @@
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">음색 (Voice)</label>
                             <select id="setting-user-voice" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs outline-none">
-                                <option value="ko-KR-Wavenet-A">ko-KR-Wavenet-A (여)</option>
+                                <option value="ko-KR-Wavenet-A" selected>ko-KR-Wavenet-A (여)</option>
                                 <option value="ko-KR-Wavenet-B">ko-KR-Wavenet-B (여)</option>
                                 <option value="ko-KR-Wavenet-C">ko-KR-Wavenet-C (남)</option>
                                 <option value="ko-KR-Wavenet-D">ko-KR-Wavenet-D (남)</option>
@@ -184,20 +185,24 @@
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">피치 (Pitch)</label>
-                            <input type="number" id="setting-user-pitch" value="6.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-user-pitch" value="0.0" step="0.5" min="-20" max="20" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-500 font-bold block mb-0.5">속도 (Rate)</label>
-                            <input type="number" id="setting-user-rate" value="1.1" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
+                            <input type="number" id="setting-user-rate" value="1.00" step="0.05" min="0.25" max="4.0" class="w-full bg-white border border-slate-200 text-slate-700 rounded-lg p-1.5 text-xs text-right outline-none">
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 하단 액션 버튼 -->
-            <div class="flex gap-2.5 mt-5 pt-3 border-t border-slate-100">
+            <div class="flex items-center gap-2 mt-5 pt-3 border-t border-slate-100">
+                <button type="button" onclick="resetToDefaultTTSOptions()" class="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs md:text-sm transition-all flex items-center gap-1 shrink-0" title="권장 기본 음성/피치/속도로 복원">
+                    <span>🔄</span>
+                    <span>기본값으로</span>
+                </button>
                 <button id="save-options-btn" onclick="saveAllOptions()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md text-xs md:text-sm transition-all">설정 저장 및 적용</button>
-                <button onclick="closeOptionsModal()" class="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs md:text-sm transition-all">닫기</button>
+                <button onclick="closeOptionsModal()" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs md:text-sm transition-all shrink-0">닫기</button>
             </div>
         </div>
     </div>
@@ -337,19 +342,82 @@
             }
         }
 
+        function updateTTSKeyStatusUI() {
+            const ttsKey = document.getElementById('tts-api-key-input')?.value.trim();
+            const statusEl = document.getElementById('tts-key-status');
+            if (!statusEl) return;
+            if (ttsKey && ttsKey.length > 20) {
+                statusEl.innerText = "🔵 사용자 지정 Google TTS 키가 적용 중입니다.";
+                statusEl.className = "text-[11px] text-blue-600 font-bold mt-1.5 flex items-center gap-1";
+            } else {
+                statusEl.innerText = "🟢 시스템 기본 구글 TTS 키로 자동 연결되어 있습니다. (별도 입력 불필요)";
+                statusEl.className = "text-[11px] text-emerald-600 font-bold mt-1.5 flex items-center gap-1";
+            }
+        }
+
         function openOptionsModal(defaultTab = 'api') {
             document.getElementById('options-modal').classList.remove('hidden');
             document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || '';
             document.getElementById('tts-api-key-input').value = localStorage.getItem('tts_api_key') || '';
             
+            // TTS 세부 세팅 불러오기 (기본값 설정)
+            document.getElementById('setting-xena-voice').value = localStorage.getItem('tts_setting_xena-voice') || 'ko-KR-Wavenet-B';
+            document.getElementById('setting-xena-pitch').value = localStorage.getItem('tts_setting_xena-pitch') || '4.0';
+            document.getElementById('setting-xena-rate').value = localStorage.getItem('tts_setting_xena-rate') || '1.20';
+
+            document.getElementById('setting-xeno-voice').value = localStorage.getItem('tts_setting_xeno-voice') || 'en-US-Wavenet-D';
+            document.getElementById('setting-xeno-pitch').value = localStorage.getItem('tts_setting_xeno-pitch') || '4.0';
+            document.getElementById('setting-xeno-rate').value = localStorage.getItem('tts_setting_xeno-rate') || '1.00';
+
+            document.getElementById('setting-user-voice').value = localStorage.getItem('tts_setting_user-voice') || 'ko-KR-Wavenet-A';
+            document.getElementById('setting-user-pitch').value = localStorage.getItem('tts_setting_user-pitch') || '0.0';
+            document.getElementById('setting-user-rate').value = localStorage.getItem('tts_setting_user-rate') || '1.00';
+
             const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
             const engineRadios = document.getElementsByName('tts_engine');
             for(let radio of engineRadios) {
                 if(radio.value === engineMode) radio.checked = true;
             }
             toggleTTSEngineUI();
-            
+            updateTTSKeyStatusUI();
             switchOptionsTab(defaultTab);
+        }
+
+        function resetToDefaultTTSOptions() {
+            document.getElementById('setting-xena-voice').value = 'ko-KR-Wavenet-B';
+            document.getElementById('setting-xena-pitch').value = '4.0';
+            document.getElementById('setting-xena-rate').value = '1.20';
+
+            document.getElementById('setting-xeno-voice').value = 'en-US-Wavenet-D';
+            document.getElementById('setting-xeno-pitch').value = '4.0';
+            document.getElementById('setting-xeno-rate').value = '1.00';
+
+            document.getElementById('setting-user-voice').value = 'ko-KR-Wavenet-A';
+            document.getElementById('setting-user-pitch').value = '0.0';
+            document.getElementById('setting-user-rate').value = '1.00';
+
+            localStorage.setItem('tts_setting_xena-voice', 'ko-KR-Wavenet-B');
+            localStorage.setItem('tts_setting_xena-pitch', '4.0');
+            localStorage.setItem('tts_setting_xena-rate', '1.20');
+            localStorage.setItem('tts_setting_xeno-voice', 'en-US-Wavenet-D');
+            localStorage.setItem('tts_setting_xeno-pitch', '4.0');
+            localStorage.setItem('tts_setting_xeno-rate', '1.00');
+            localStorage.setItem('tts_setting_user-voice', 'ko-KR-Wavenet-A');
+            localStorage.setItem('tts_setting_user-pitch', '0.0');
+            localStorage.setItem('tts_setting_user-rate', '1.00');
+
+            const ttsModelSpan = document.getElementById('current-tts-model');
+            if (ttsModelSpan) {
+                const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+                if (engineMode === 'free') {
+                    updateTTSBadgeToFallback();
+                } else {
+                    const voice = currentChar === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
+                    ttsModelSpan.innerText = voice;
+                }
+            }
+
+            alert("권장 기본값(제나: Wavenet-B / 피치 4.0 / 속도 1.20, 제노: Wavenet-D / 피치 4.0 / 속도 1.00, 사용자: Wavenet-A / 피치 0.0 / 속도 1.00)으로 복원되었습니다.");
         }
 
         function toggleTTSEngineUI() {
@@ -415,13 +483,16 @@
                 closeOptionsModal();
             }, 800);
 
-            await setCharacterMode(currentChar, true);
+            await setCharacterMode(currentChar, false);
         }
 
         window.testTTS = async function(char) {
-            const voice = document.getElementById(`setting-${char}-voice`)?.value;
-            const rawPitch = parseFloat(document.getElementById(`setting-${char}-pitch`)?.value || 0);
-            const rawRate = parseFloat(document.getElementById(`setting-${char}-rate`)?.value || 1.0);
+            const defaultVoice = char === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
+            const voice = document.getElementById(`setting-${char}-voice`)?.value || localStorage.getItem(`tts_setting_${char}-voice`) || defaultVoice;
+            const defaultPitch = (char === 'user') ? 0.0 : 4.0;
+            const defaultRate = (char === 'xena') ? 1.20 : 1.00;
+            const rawPitch = parseFloat(document.getElementById(`setting-${char}-pitch`)?.value || localStorage.getItem(`tts_setting_${char}-pitch`) || defaultPitch);
+            const rawRate = parseFloat(document.getElementById(`setting-${char}-rate`)?.value || localStorage.getItem(`tts_setting_${char}-rate`) || defaultRate);
             
             const pitch = Math.max(-20, Math.min(20, rawPitch));
             const rate = Math.max(0.25, Math.min(4.0, rawRate));
@@ -444,6 +515,10 @@
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(text);
                     utterance.lang = langCode;
+                    const v = getBestVoice(langCode.split('-')[0]);
+                    if (v) utterance.voice = v;
+                    utterance.pitch = 1.0;
+                    utterance.rate = 1.0;
                     
                     utterance.onend = () => { if (btn) btn.innerText = originalText; };
                     utterance.onerror = () => { if (btn) btn.innerText = originalText; };
@@ -837,14 +912,14 @@
             const langCode = (currentChar === 'xena') ? 'ko-KR' : 'en-US';
             const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
             
-            const rawPitch = parseFloat(document.getElementById('setting-user-pitch')?.value || 6.0);
-            const rawRate = parseFloat(document.getElementById('setting-user-rate')?.value || 1.1);
+            const rawPitch = parseFloat(document.getElementById('setting-user-pitch')?.value || localStorage.getItem('tts_setting_user-pitch') || 0.0);
+            const rawRate = parseFloat(document.getElementById('setting-user-rate')?.value || localStorage.getItem('tts_setting_user-rate') || 1.00);
             
             const pitch = Math.max(-20, Math.min(20, rawPitch));
             const rate = Math.max(0.25, Math.min(4.0, rawRate));
             
             if (engineMode === 'paid') {
-                const userVoiceName = document.getElementById('setting-user-voice')?.value || 'ko-KR-Wavenet-C';
+                const userVoiceName = document.getElementById('setting-user-voice')?.value || localStorage.getItem('tts_setting_user-voice') || 'ko-KR-Wavenet-A';
                 
                 const audioBase64 = await fetchGoogleTTS(text, userVoiceName, langCode, pitch, rate);
                 
@@ -867,8 +942,8 @@
                 
                 const voice = getBestVoice(utterance.lang.split('-')[0]);
                 if (voice) utterance.voice = voice;
-                utterance.pitch = Math.max(0, Math.min(2, 1 + (pitch / 20))); 
-                utterance.rate = Math.max(0.1, Math.min(10, rate));
+                utterance.pitch = 1.0; 
+                utterance.rate = 1.0;
                 
                 let resolved = false;
                 const safeResolve = () => {
@@ -894,11 +969,11 @@
         async function fetchGoogleTTS(text, voiceName, langCode, pitch = 0, speakingRate = 1.0) {
             const ttsModelSpan = document.getElementById('current-tts-model');
             if (ttsModelSpan) {
-                ttsModelSpan.innerText = voiceName || "ko-KR-Wavenet-C";
+                ttsModelSpan.innerText = voiceName || (currentChar === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D');
                 ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors";
-                if (voiceName === 'ko-KR-Wavenet-A') {
+                if (voiceName?.startsWith('ko-KR-Wavenet-B') || voiceName?.startsWith('ko-KR-Wavenet-A')) {
                     ttsModelSpan.classList.add('text-pink-500', 'bg-pink-50');
-                } else if (voiceName === 'en-US-Wavenet-D') {
+                } else if (voiceName?.startsWith('en-US')) {
                     ttsModelSpan.classList.add('text-blue-500', 'bg-blue-50');
                 } else {
                     ttsModelSpan.classList.add('text-purple-500', 'bg-purple-50');
@@ -962,12 +1037,12 @@
                 const langCode = currentChar === 'xena' ? 'ko-KR' : 'en-US';
                 
                 let audioBase64 = null;
-                const defaultVoice = currentChar === 'xena' ? 'ko-KR-Wavenet-A' : 'en-US-Wavenet-D';
-                const voiceName = document.getElementById(`setting-${currentChar}-voice`)?.value || defaultVoice;
-                const xenaPitch = parseFloat(document.getElementById('setting-xena-pitch')?.value || 9.0);
-                const xenaRate = parseFloat(document.getElementById('setting-xena-rate')?.value || 1.15);
-                const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || 7.0);
-                const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || 1.1);
+                const defaultVoice = currentChar === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
+                const voiceName = document.getElementById(`setting-${currentChar}-voice`)?.value || localStorage.getItem(`tts_setting_${currentChar}-voice`) || defaultVoice;
+                const xenaPitch = parseFloat(document.getElementById('setting-xena-pitch')?.value || localStorage.getItem('tts_setting_xena-pitch') || 4.0);
+                const xenaRate = parseFloat(document.getElementById('setting-xena-rate')?.value || localStorage.getItem('tts_setting_xena-rate') || 1.20);
+                const xenoPitch = parseFloat(document.getElementById('setting-xeno-pitch')?.value || localStorage.getItem('tts_setting_xeno-pitch') || 4.0);
+                const xenoRate = parseFloat(document.getElementById('setting-xeno-rate')?.value || localStorage.getItem('tts_setting_xeno-rate') || 1.00);
                 
                 const rawPitch = currentChar === 'xena' ? xenaPitch : xenoPitch;
                 const rawRate = currentChar === 'xena' ? xenaRate : xenoRate;
@@ -998,8 +1073,8 @@
                         utterance.lang = langCode;
                         const voice = getBestVoice(langCode.split('-')[0]);
                         if (voice) utterance.voice = voice;
-                        utterance.pitch = Math.max(0, Math.min(2, 1 + (pitch / 20))); 
-                        utterance.rate = Math.max(0.1, Math.min(10, rate));
+                        utterance.pitch = 1.0; 
+                        utterance.rate = 1.0;
                         
                         utterance.onend = safeResolve;
                         utterance.onerror = safeResolve;
@@ -1086,13 +1161,21 @@
             
             const ttsModelSpan = document.getElementById('current-tts-model');
             if (ttsModelSpan) {
-                const voiceName = char === 'xena' ? 'ko-KR-Wavenet-A' : 'en-US-Wavenet-D';
-                ttsModelSpan.innerText = voiceName;
-                ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors";
-                if (voiceName === 'ko-KR-Wavenet-A') {
-                    ttsModelSpan.classList.add('text-pink-500', 'bg-pink-50');
-                } else if (voiceName === 'en-US-Wavenet-D') {
-                    ttsModelSpan.classList.add('text-blue-500', 'bg-blue-50');
+                const engineMode = localStorage.getItem('tts_engine_mode') || 'paid';
+                if (engineMode === 'free') {
+                    updateTTSBadgeToFallback();
+                } else {
+                    const defaultVoice = char === 'xena' ? 'ko-KR-Wavenet-B' : 'en-US-Wavenet-D';
+                    const voiceName = document.getElementById(`setting-${char}-voice`)?.value || localStorage.getItem(`tts_setting_${char}-voice`) || defaultVoice;
+                    ttsModelSpan.innerText = voiceName;
+                    ttsModelSpan.className = "text-[11px] md:text-xs font-mono font-bold px-2 py-1 rounded transition-colors";
+                    if (voiceName.startsWith('ko-KR-Wavenet-B') || voiceName.startsWith('ko-KR-Wavenet-A')) {
+                        ttsModelSpan.classList.add('text-pink-500', 'bg-pink-50');
+                    } else if (voiceName.startsWith('en-US')) {
+                        ttsModelSpan.classList.add('text-blue-500', 'bg-blue-50');
+                    } else {
+                        ttsModelSpan.classList.add('text-purple-500', 'bg-purple-50');
+                    }
                 }
             }
             

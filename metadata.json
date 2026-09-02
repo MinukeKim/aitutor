@@ -1,0 +1,6 @@
+{
+  "name": "AX LAB AI Tutor",
+  "description": "과학을 AI로 배우는 초등 영어 학습 AI 튜터 (제나 & 제노)",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
