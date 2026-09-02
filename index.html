@@ -279,10 +279,7 @@
                 <!-- 왼쪽 캐릭터 영역 -->
                 <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col items-center gap-3 relative">
                     <div class="flex justify-center w-full relative">
-                        <!-- 마이크 활성 시 캐릭터 하단 사운드 웨이브 링 -->
-                        <div id="mic-ripple-ring" class="hidden absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-12 bg-red-400/20 rounded-full blur-md animate-ping pointer-events-none"></div>
-                        <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10 transition-all duration-300"></canvas>
-                        <canvas id="particleCanvas" width="400" height="600" class="canvas-responsive absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-20"></canvas>
+                        <canvas id="tutorCanvas" width="400" height="600" class="canvas-responsive z-10"></canvas>
                     </div>
                     <div class="flex w-full max-w-[320px] bg-slate-100 p-1.5 rounded-2xl z-30 shadow-inner">
                         <button id="btn-xena" onclick="handleCharacterToggle('xena')" class="flex-1 py-3 text-sm md:text-base font-black rounded-xl transition-all shadow-sm">Xena (KR)</button>
@@ -660,7 +657,6 @@
         const tutorBubbleContainer = document.getElementById('tutor-bubble-container');
         const tutorText = document.getElementById('tutor-text');
         const canvasEl = document.getElementById('tutorCanvas');
-        const particleCanvas = document.getElementById('particleCanvas');
         const quickRepliesContainer = document.getElementById('quick-replies-container');
         const inputEl = document.getElementById('user-input');
         const userInputBox = document.getElementById('user-input-box');
@@ -730,25 +726,7 @@
         }
 
         function triggerTransformParticles() {
-            const ctx = particleCanvas.getContext('2d');
-            const startTime = performance.now();
-            let animationFrameId;
-            const particles = Array.from({ length: 35 }, () => ({
-                x: 200, y: 300, vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.5) * 14,
-                size: Math.random() * 6 + 3, color: Math.random() > 0.3 ? '#facc15' : '#ffffff', alpha: 1
-            }));
-            function drawParticles(now) {
-                const elapsed = now - startTime;
-                if (elapsed >= 600) { ctx.clearRect(0, 0, 400, 600); cancelAnimationFrame(animationFrameId); return; }
-                ctx.clearRect(0, 0, 400, 600);
-                particles.forEach(p => {
-                    p.x += p.vx; p.y += p.vy; p.alpha = Math.max(0, 1 - elapsed / 600);
-                    ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-                });
-                animationFrameId = requestAnimationFrame(drawParticles);
-            }
-            animationFrameId = requestAnimationFrame(drawParticles);
+            // 시각효과 간소화: 부하 제거를 위해 파티클 애니메이션 비활성화
         }
 
         function formatUIText(text) {
@@ -842,33 +820,37 @@
                     }
                 }
                 
-                if (finalTranscript || interimTranscript) {
-                    inputEl.value = finalTranscript + interimTranscript;
+                const combinedTranscript = (finalTranscript + interimTranscript).trim();
+                
+                if (combinedTranscript) {
+                    inputEl.value = combinedTranscript;
                     
-                    // 침묵 감지 자동 전송
+                    // 사용자가 말을 이어가는 중이거나 잠시 쉴 때 성급하게 끊지 않도록 디바운스 대기시간 1.8초로 여유있게 설정
                     clearTimeout(autoSubmitTimer);
-                    if (finalTranscript) {
-                        const delay = (currentChar === 'xena') ? 900 : 1500;
-                        autoSubmitTimer = setTimeout(() => {
-                            if (isMicOn && !window.speechSynthesis.speaking && inputEl.value.trim() !== "") {
-                                sendMessage(null, false, true);
-                            }
-                        }, delay);
-                    }
+                    autoSubmitTimer = setTimeout(() => {
+                        if (isMicOn && !window.speechSynthesis.speaking && !currentAudio && inputEl.value.trim() !== "") {
+                            sendMessage(null, false, true);
+                        }
+                    }, 1800);
                 }
             };
             
             recognition.onerror = (event) => {
-                console.error('STT Error:', event.error);
+                if (event.error === 'no-speech') {
+                    // 무음 에러는 무시하고 계속 대기
+                    return;
+                }
                 if (event.error === 'not-allowed') {
                     alert('마이크 사용 권한이 차단되었습니다. 브라우저 설정에서 허용해 주세요.');
                     turnOffMic();
+                } else {
+                    console.warn('STT Event Notice:', event.error);
                 }
             };
             
             recognition.onend = () => {
                 isListening = false;
-                if (isMicOn && !window.speechSynthesis.speaking && !inputEl.disabled) {
+                if (isMicOn && !window.speechSynthesis.speaking && !currentAudio && !inputEl.disabled) {
                     try { recognition.start(); } catch(e){}
                 } else if (!isMicOn) {
                     updateMicUI(false);
@@ -910,7 +892,7 @@
             clearTimeout(autoSubmitTimer);
             clearTimeout(micIdleTimer);
             if (recognition) {
-                recognition.stop();
+                try { recognition.stop(); } catch(e){}
             }
             updateMicUI(false);
         }
@@ -920,7 +902,6 @@
             const micText = document.getElementById('mic-status-text');
             const micBg = document.getElementById('mic-switch-bg');
             const micKnob = document.getElementById('mic-switch-knob');
-            const micRipple = document.getElementById('mic-ripple-ring');
             
             if(!micBtn) return;
             
@@ -928,17 +909,15 @@
                 micBg.classList.replace('bg-slate-400', 'bg-red-500');
                 micKnob.classList.replace('left-[2px]', 'left-[12px]');
                 micBtn.classList.add('bg-red-50', 'border-red-100');
-                if (micRipple) micRipple.classList.remove('hidden');
                 
-                // 백로그 3번: 마이크 온 상태에서는 인풋창을 텍스트 뷰어(readonly)로 전환하고 보내기 버튼 비활성화
                 inputEl.readOnly = true;
                 sendBtn.disabled = true;
                 userInputBox.classList.add('bg-slate-50/90', 'border-red-200');
 
-                if (isActuallyListening && !window.speechSynthesis.speaking) {
+                if (isActuallyListening && !window.speechSynthesis.speaking && !currentAudio) {
                     micText.innerText = "LISTENING...";
                     micText.className = "text-[11px] font-extrabold text-red-600 animate-pulse transition-colors";
-                    inputEl.placeholder = currentChar === 'xena' ? "듣고 있어요... (말씀하시면 자동으로 전송됩니다)" : "Listening... (Speak to send automatically)";
+                    inputEl.placeholder = currentChar === 'xena' ? "듣고 있어요... (말씀을 마치시면 전송됩니다)" : "Listening... (Will send when you finish speaking)";
                 } else {
                     micText.innerText = "MIC ON";
                     micText.className = "text-[11px] font-extrabold text-red-400 transition-colors";
@@ -950,7 +929,6 @@
                 micBg.classList.replace('bg-red-500', 'bg-slate-400');
                 micKnob.classList.replace('left-[12px]', 'left-[2px]');
                 micBtn.classList.remove('bg-red-50', 'border-red-100');
-                if (micRipple) micRipple.classList.add('hidden');
                 
                 inputEl.readOnly = false;
                 sendBtn.disabled = false;
@@ -1528,19 +1506,9 @@
             startSpeakingAnim: function() { 
                 clearInterval(this.simulation.speakIntervalId); this.simulation.isSpeaking = true; 
                 this.simulation.speakIntervalId = setInterval(() => { this.simulation.mouthOpen = 4 + Math.random() * 8; }, 130); 
-                if (canvasEl) {
-                    if (currentChar === 'xena') {
-                        canvasEl.style.filter = "drop-shadow(0 0 16px rgba(244, 114, 182, 0.45))";
-                    } else {
-                        canvasEl.style.filter = "drop-shadow(0 0 16px rgba(59, 130, 246, 0.45))";
-                    }
-                }
             },
             stopSpeakingAnim: function() { 
                 this.simulation.isSpeaking = false; clearInterval(this.simulation.speakIntervalId); this.simulation.speakIntervalId = null; this.simulation.mouthOpen = 0; 
-                if (canvasEl) {
-                    canvasEl.style.filter = "none";
-                }
             },
             startLoop: function() { 
                 let then = performance.now(); const fpsInterval = 1000 / 30;
