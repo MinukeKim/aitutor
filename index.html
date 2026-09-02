@@ -747,7 +747,8 @@
         }
 
         function formatUIText(text) {
-            let formatted = text.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '<span class="text-rose-600 font-extrabold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm block w-fit my-2">🚨 $1: $2</span>');
+            let formatted = text.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').trim();
+            formatted = formatted.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '<span class="text-rose-600 font-extrabold bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm block w-fit my-2">🚨 $1: $2</span>');
             const keywords = /\b(Egypt|countries|country|rivers|river|kings|king|Pharaohs|Pharaoh|built|building|builds|build|pyramids|pyramid|moved|moving|moves|move|stones|stone|secrets|secret)\b/gi;
             formatted = formatted.replace(keywords, match => `<span class="text-blue-600 font-bold">${match}</span>`);
             return formatted;
@@ -1128,7 +1129,7 @@
                 let sentence = sentences[i];
                 if (!sentence) continue;
 
-                let cleanSentenceForVoice = sentence.replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z0-9\s.,!?'-]+\)/g, '').replace(/[\[\]]/g, ''); 
+                let cleanSentenceForVoice = sentence.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').replace(/\[?(경고|WARNING):\s*(.*?)\]?/g, '$2').replace(/\s*\([A-Za-z0-9\s.,!?'-]+\)/g, '').replace(/[\[\]]/g, ''); 
                 const highlightedHtml = text.replace(sentence, `<span class="highlight">${sentence}</span>`);
                 tutorText.innerHTML = formatUIText(highlightedHtml);
                 tutorBubbleContainer.scrollTop = tutorBubbleContainer.scrollHeight;
@@ -1398,37 +1399,38 @@
 
             const apiData = await apiDataPromise; 
             if (apiData) {
-                let cleanReply = apiData.replyText;
+                let cleanReply = apiData.replyText || "";
                 let triggerSwitchToXeno = false;
                 let triggerSwitchToXena = false;
                 let triggerSessionSummary = false;
 
-                if (cleanReply.includes('[ACTION:SWITCH_TO_XENO]')) {
-                    cleanReply = cleanReply.replace(/\[ACTION:SWITCH_TO_XENO\]/g, '').trim();
+                // 유연한 대소문자 및 언더스코어/공백 정규식 매칭
+                if (/\[ACTION\s*:\s*SWITCH_?TO_?XENO\]/i.test(cleanReply)) {
                     triggerSwitchToXeno = true;
                 }
-                if (cleanReply.includes('[ACTION:SWITCH_TO_XENA]')) {
-                    cleanReply = cleanReply.replace(/\[ACTION:SWITCH_TO_XENA\]/g, '').trim();
+                if (/\[ACTION\s*:\s*SWITCH_?TO_?XENA\]/i.test(cleanReply)) {
                     triggerSwitchToXena = true;
                 }
-                if (cleanReply.includes('[ACTION:SESSION_SUMMARY]')) {
-                    cleanReply = cleanReply.replace(/\[ACTION:SESSION_SUMMARY\]/g, '').trim();
+                if (/\[ACTION\s*:\s*SESSION_?SUMMARY\]/i.test(cleanReply)) {
                     triggerSessionSummary = true;
                 }
+
+                // 모든 종류의 [ACTION:...] 태그를 100% 깔끔하게 제거하여 UI 및 TTS에 노출 방지
+                cleanReply = cleanReply.replace(/\[ACTION\s*:\s*[^\]]+\]/gi, '').trim();
 
                 currentRawText = cleanReply;
                 chatHistories[currentChar].push({ role: "model", parts: [{ text: cleanReply }] });
                 renderSuggestions();
                 await speakText(cleanReply);
 
-                if (triggerSwitchToXeno && currentChar === 'xena') {
-                    setTimeout(() => {
-                        setCharacterMode('xeno', false);
-                    }, 1200);
-                } else if (triggerSwitchToXena && currentChar === 'xeno') {
-                    setTimeout(() => {
-                        setCharacterMode('xena', false);
-                    }, 1200);
+                if (triggerSwitchToXeno && currentChar !== 'xeno') {
+                    setTimeout(async () => {
+                        await handleCharacterToggle('xeno');
+                    }, 1400);
+                } else if (triggerSwitchToXena && currentChar !== 'xena') {
+                    setTimeout(async () => {
+                        await handleCharacterToggle('xena');
+                    }, 1400);
                 } else if (triggerSessionSummary) {
                     setTimeout(() => {
                         openSessionSummaryModal();
