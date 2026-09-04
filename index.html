@@ -697,33 +697,8 @@
         }
 
         function playMicReadySFX() {
-            if (!isSoundOn) return;
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                if (ctx.state === 'suspended') ctx.resume();
-
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                const now = ctx.currentTime;
-
-                osc.frequency.setValueAtTime(587.33, now); 
-                osc.frequency.setValueAtTime(880.00, now + 0.08); 
-
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(now);
-                osc.stop(now + 0.35);
-            } catch (e) {
-                console.warn("SFX Error:", e);
-            }
+            // 안드로이드 OS 기본 비프음과 겹쳐서 불쾌한 경험을 주므로 커스텀 효과음 완전 제거
+            return;
         }
 
         let animationFrameId = null;
@@ -876,8 +851,12 @@
                     // 사용자가 말을 이어가는 중이거나 잠시 쉴 때 성급하게 끊지 않도록 디바운스 대기시간 1.0초로 설정 (반응성 개선)
                     clearTimeout(autoSubmitTimer);
                     autoSubmitTimer = setTimeout(() => {
+                        autoSubmitTimer = null; // 타이머 실행 시 초기화
                         if (isMicOn && !window.speechSynthesis.speaking && !currentAudio && inputEl.value.trim() !== "") {
                             sendMessage(null, false, true);
+                        } else if (isMicOn && !isListening) {
+                            // 메시지 전송 조건이 안 맞는데 마이크 켜져있다면 (침묵 등) OS에 의해 꺼진 마이크 다시 켜기
+                            try { recognition.start(); } catch(e){}
                         }
                     }, 1000);
                 }
@@ -898,6 +877,15 @@
             
             recognition.onend = () => {
                 isListening = false;
+                
+                // autoSubmitTimer가 작동 중(즉, 사용자가 방금 말하고 타이머 대기 중)일 때는 
+                // 어차피 1초 뒤에 sendMessage(fetching 모드)에서 마이크를 stop() 할 것이므로, 
+                // 여기서 start()를 하면 안드로이드에서 삐빅! 하는 이중 비프음이 발생함. 따라서 재시작 무시.
+                if (autoSubmitTimer !== null) {
+                    updateMicUI(true, false);
+                    return;
+                }
+                
                 if (isMicOn && !window.speechSynthesis.speaking && !currentAudio && !inputEl.disabled) {
                     try { recognition.start(); } catch(e){}
                 } else if (!isMicOn) {
@@ -938,6 +926,7 @@
         function turnOffMic() {
             isMicOn = false;
             clearTimeout(autoSubmitTimer);
+            autoSubmitTimer = null;
             clearTimeout(micIdleTimer);
             if (recognition) {
                 try { recognition.stop(); } catch(e){}
