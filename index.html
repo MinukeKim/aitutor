@@ -1,4 +1,4 @@
-<!-- v1.7.2 (Sprint 10.0) -->
+<!-- v1.7.4 (Sprint 10.0) -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -52,7 +52,7 @@
             <button onclick="enterApp()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95">시작하기</button>
         </div>
         <div class="absolute bottom-6 text-[13px] font-mono text-slate-600">
-            Sprint 10.0 • v1.7.0
+            Sprint 10.0 • v1.7.4
         </div>
     </div>
 
@@ -261,7 +261,7 @@
                 <div class="flex items-baseline gap-2">
                     <h1 class="text-lg md:text-2xl font-extrabold text-slate-800 cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-2" onclick="resetChat()">
                         <span>AX LAB AI Tutor</span>
-                        <span class="text-[10px] md:text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v1.7.2</span>
+                        <span class="text-[10px] md:text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">v1.7.4</span>
                     </h1>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
@@ -1001,6 +1001,9 @@
 
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { openOptionsModal('api'); return; }
+
+            // '시작하기' 버튼 클릭 시(User Gesture) 마이크를 활성화하여 브라우저 정책(권한 차단) 우회
+            startMic();
 
             const startChar = Math.random() < 0.5 ? 'xena' : 'xeno';
             await setCharacterMode(startChar, true);
