@@ -1002,8 +1002,11 @@
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { openOptionsModal('api'); return; }
 
-            // '시작하기' 버튼 클릭 시(User Gesture) 마이크를 활성화하여 브라우저 정책(권한 차단) 우회
-            startMic();
+            // 마이크 사용 의도(ON)만 설정하고 UI를 대기 상태로 변경.
+            // 실제 마이크 활성화(recognition.start)는 첫 인사 TTS가 끝난 후 
+            // setUILock('idle')이 호출될 때 안전하게 자동 실행됨.
+            isMicOn = true;
+            updateMicUI(true, false);
 
             const startChar = Math.random() < 0.5 ? 'xena' : 'xeno';
             await setCharacterMode(startChar, true);
